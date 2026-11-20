@@ -1,0 +1,81 @@
+.finance-form {
+  max-width: 720px;
+}
+
+.finance-form form,
+.panel form {
+  margin-top: 1rem;
+}
+
+.finance-actions {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+.finance-notice {
+  padding: 1rem;
+  border-left: 3px solid #a54a26;
+  background: #fff7ef;
+}
+
+.refund-timeline {
+  padding-left: 1.4rem;
+}
+
+.refund-timeline li {
+  margin: 1rem 0;
+}
+
+.refund-timeline span {
+  display: block;
+  color: var(--muted, #666);
+}
+
+.panel p {
+  overflow-wrap: anywhere;
+}
+
+.finance-form input,
+.finance-form select,
+.finance-form textarea {
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .finance-actions .button {
+    font-size: .85rem;
+  }
+
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-form {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .finance-workspace .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-workspace .stats > div {
+    min-width: 0;
+  }
+
+  .finance-workspace .stats strong {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media print {
+  .finance-notice {
+    background: white;
+  }
+
+  .refund-timeline {
+    break-inside: avoid;
+  }
+}

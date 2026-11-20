@@ -1,0 +1,39 @@
+@model List<Reservation>
+@{
+    ViewData["Title"] = "จองโต๊ะ";
+}
+<section class="section">
+    <h1>จองโต๊ะ</h1>
+    <p>ให้บริการทุกวัน 10:00 ถึง 22:00 น., แต่ละรอบ 90 นาที, สูงสุด 6 ท่าน</p>
+    <div class="checkout-grid">
+        <form class="panel" action="/Reservations/Create" method="post">
+            @Html.AntiForgeryToken()
+            <h2>ข้อมูลการจอง</h2>
+            <div class="form-grid">
+                <label>ชื่อผู้จอง<input name="name" value="@User.Identity?.Name" required/>
+                </label>
+                <label>เบอร์โทร<input name="phone" type="tel" required/>
+                </label>
+                <label>วันและเวลา<input name="startsAt" type="datetime-local" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required/>
+                </label>
+                <label>จำนวนผู้ร่วมโต๊ะ<input name="guests" type="number" min="1" max="6" value="2" required/>
+                </label>
+            </div>
+            @{
+                ViewData["TableBooking"] = true;
+            }
+            <partial name="_TablePicker" model="(IEnumerable<DiningTable>)ViewBag.Tables"/>
+                <label>หมายเหตุ<textarea name="note" placeholder="เช่น ต้องการเก้าอี้เด็ก"></textarea>
+                </label>
+                <button class="button">ส่งคำขอจองโต๊ะ </button>
+            </form>
+            <div class="reservation-note">
+                <h2>ก่อนมาที่ร้าน</h2>
+                <p>ร้านจะยืนยันการจองผ่านสถานะในหน้านี้<br/>กรุณาตรวจสอบก่อนเดินทาง</p>
+                <img src="/images/food-07.jpg" alt="สลัดโบวล์สดใหม่"/>
+            </div>
+        </div>
+        <h2 class="mt">การจองของฉัน</h2>
+        <partial name="_Bookings" model="Model"/>
+    </section>
+    <partial name="_Pagination"/>

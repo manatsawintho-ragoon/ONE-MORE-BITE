@@ -1,0 +1,98 @@
+@model MenuItem
+@{
+    ViewData["Title"] = Model.Name;
+}
+<section class="section">
+    <a class="back-link" href="/Menu">กลับไปเมนูอาหาร</a>
+    <div class="detail-grid">
+        <img class="detail-image" src="@Model.ImageUrl" alt="@Model.Name"/>
+        <div class="detail-copy">
+            <span class="eyebrow">@Model.Category.Name</span>
+            <h1>@Model.Name</h1>
+            <p>@Model.Description</p>
+            <div class="detail-price">
+                <strong class="big-price">฿@Model.EffectivePrice.ToString("N2")</strong>
+                @if (Model.DiscountPercent > 0)
+                {
+                    <del>฿@Model.Price.ToString("N2")</del>
+                    <span class="discount-label">ลด @Model.DiscountPercent.ToString("0.##")%, ประหยัด ฿@((Model.Price - Model.EffectivePrice).ToString("N2"))</span>
+                }
+            </div>
+            <small class="muted">ราคาก่อน VAT 7%</small>
+            @if (Model.ReviewCount > 0)
+            {
+                <p class="rating-line">
+                    <partial name="_Star"/> @Model.AverageRating.ToString("0.0") จาก @Model.ReviewCount รีวิว</p>
+            }
+            <form method="post" action="/Cart/Add">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="menuItemId" value="@Model.Id"/>
+                <label>จำนวน<input name="quantity" type="number" min="1" max="99" value="1" required placeholder="1"/>
+                </label>
+                <label>บอกครัวเพิ่มเติม<textarea name="note" maxlength="300" placeholder="เช่น ไม่ใส่ผัก เผ็ดน้อย"></textarea>
+                </label>
+                <p class="muted">หากแพ้อาหาร โปรดแจ้งพนักงานก่อนสั่ง</p>
+                <button class="button wide" disabled="@Model.SoldOut">@(Model.SoldOut ? "หมดชั่วคราว" : "เพิ่มลงตะกร้า")</button>
+            </form>
+        </div>
+    </div>
+</section>
+<section id="reviews" class="section reviews-section">
+    <h2>รีวิวจากลูกค้า</h2>
+    <p>เฉพาะผู้ที่สั่งเมนูนี้ ชำระเงินและได้รับอาหารแล้ว</p>
+    @if (Model.ReviewCount == 0)
+    {
+        <div class="review-empty">ยังไม่มีรีวิวสำหรับเมนูนี้</div>
+    }
+    else
+    {
+        <div class="review-grid">
+            @foreach (var review in Model.Reviews.OrderByDescending(x => x.CreatedAt))
+            {
+                <article class="review-card">
+                    <div class="review-stars" aria-label="@review.Rating จาก 5 ดาว">
+                        @for (var star = 1; star <= 5; star++)
+                        {
+                            <span class="@(star <= review.Rating ? "filled" : "")">
+                                <partial name="_Star"/>
+                            </span>
+                        }
+                    </div>
+                    <p>@review.Comment</p>
+                    <strong>@review.User.Name</strong>
+                    <small>@review.CreatedAt.ToString("dd/MM/yyyy"), ยืนยันการสั่งซื้อแล้ว</small>
+                </article>
+            }
+        </div>
+    }
+    @if (User.IsInRole("Customer") && ViewBag.ReviewOrders != null && ((IEnumerable<ReviewPurchase>)ViewBag.ReviewOrders).Any())
+    {
+        <form class="panel review-form" method="post" action="/Reviews/Create">
+            @Html.AntiForgeryToken()
+            <h3>มื้อนี้เป็นอย่างไรบ้าง</h3>
+            <input type="hidden" name="menuItemId" value="@Model.Id"/>
+            <label>ออเดอร์ที่ทาน
+                <select name="orderId">
+                    @foreach (ReviewPurchase purchase in ViewBag.ReviewOrders)
+                    {
+                        <option value="@purchase.OrderId">#@purchase.OrderId, @purchase.CreatedAt.ToString("dd/MM/yyyy")</option>
+                    }
+                </select>
+            </label>
+            <fieldset class="rating-picker">
+                <legend>ให้คะแนน</legend>
+                @for (var star = 1; star <= 5; star++)
+                {
+                    <label>
+                        <input type="radio" name="rating" value="@star" required aria-label="@star ดาว"/>
+                        <span>@star <partial name="_Star"/>
+                        </span>
+                    </label>
+                }
+            </fieldset>
+            <label>ความคิดเห็น<textarea name="comment" required maxlength="1000" placeholder="เล่ารสชาติหรือสิ่งที่ชอบในจานนี้"></textarea>
+            </label>
+            <button class="button">ส่งรีวิว</button>
+        </form>
+    }
+</section>

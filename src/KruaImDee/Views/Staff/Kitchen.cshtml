@@ -1,0 +1,68 @@
+@model List<Order>
+@{
+    ViewData["Title"] = "คิวครัว";
+}
+<div class="section-head">
+    <div>
+        <h1>คิวครัว</h1>
+        <p>เรียงตามเวลารับออเดอร์, อัปเดตอัตโนมัติทุก 5 วินาที</p>
+    </div>
+    <span class="badge Preparing"> @Model.Count ออเดอร์ในครัว</span>
+</div>
+<div class="kitchen-grid" data-refresh="5">
+    @foreach (var order in Model)
+    {
+        string nextStatus = "Served";
+        string advanceLabel = "เสิร์ฟเรียบร้อย ";
+        if (order.Status == "Received")
+        {
+            nextStatus = "Preparing";
+            advanceLabel = "เริ่มปรุง ";
+        }
+        else if (order.Status == "Preparing")
+        {
+            nextStatus = "Ready";
+            advanceLabel = "พร้อมเสิร์ฟ ";
+        }
+
+        <article class="kitchen-card">
+            <header>
+                <div>
+                    <h2>#@order.Id.ToString("D4")</h2>
+                    <span>@(order.DiningTable?.Name??"รับกลับบ้าน"), @order.CreatedAt.ToString("HH:mm")</span>
+                </div>
+                <span class="badge @order.Status">@Rules.Label(order.Status)</span>
+            </header>
+            <div class="kitchen-items">
+                @foreach (var orderItem in order.Items)
+                {
+                    <div>
+                        <strong>
+                            <b>@orderItem.Quantity</b> @orderItem.Name</strong>
+                        @if (!string.IsNullOrWhiteSpace(orderItem.Note))
+                        {
+                            <p class="red"> @orderItem.Note</p>
+                        }
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(order.Note))
+                {
+                    <p class="note">@order.Note</p>
+                }
+            </div>
+            <form method="post" action="/Staff/Advance">
+                @Html.AntiForgeryToken()
+                <input name="id" type="hidden" value="@order.Id"/>
+                <input name="status" type="hidden" value="@nextStatus"/>
+                <button class="button wide">@advanceLabel</button>
+            </form>
+        </article>
+    }
+</div>
+@if (Model.Count == 0)
+{
+    <div class="empty">
+        <h2>ไม่มีออเดอร์ในครัว</h2>
+        <p>ออเดอร์ใหม่จะแสดงที่นี่โดยอัตโนมัติ</p>
+    </div>
+}

@@ -1,0 +1,111 @@
+@model FinancePage
+@{
+    ViewData["Title"] = "การเงินรับและคืน";
+    var exportDates = new
+    {
+        from = Model.From.ToString("yyyy-MM-dd"),
+        to = Model.To.ToString("yyyy-MM-dd")
+    };
+    string? exportUrl = Url.Action("Export", exportDates);
+}
+<div class="section-head">
+    <div>
+        <h1>การเงินรับและคืน</h1>
+        <p>ยอดรับตามวันชำระ ยอดคืนตามวันที่คืนเงินจริง, เวลากรุงเทพฯ</p>
+    </div>
+    <div class="finance-actions no-print">
+        <a class="button secondary" href="@exportUrl">ส่งออก CSV</a>
+        <button class="button secondary" onclick="window.print()">พิมพ์</button>
+    </div>
+</div>
+<form class="filter-bar" method="get">
+    <label>ตั้งแต่<input name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")"/>
+    </label>
+    <label>ถึง<input name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")"/>
+    </label>
+    <button class="button">ดูรายงาน</button>
+</form>
+<div class="stats">
+    <div>
+        <small>รับเงินจริง</small>
+        <strong data-finance-received="@Model.Received">฿@Model.Received.ToString("N2")</strong>
+    </div>
+    <div>
+        <small>คืนเงินจริง</small>
+        <strong data-finance-refunded="@Model.Refunded">฿@Model.Refunded.ToString("N2")</strong>
+    </div>
+    <div>
+        <small>รับสุทธิ</small>
+        <strong data-finance-net="@Model.Net">฿@Model.Net.ToString("N2")</strong>
+    </div>
+</div>
+<div class="report-grid">
+    <div class="panel">
+        <h2>เงินสด</h2>
+        <p>รับ ฿@Model.CashReceived.ToString("N2"), คืน ฿@Model.CashRefunded.ToString("N2")</p>
+        <strong>สุทธิ ฿@((Model.CashReceived-Model.CashRefunded).ToString("N2"))</strong>
+    </div>
+    <div class="panel">
+        <h2>เงินโอน</h2>
+        <p>รับ ฿@Model.TransferReceived.ToString("N2"), คืน ฿@Model.TransferRefunded.ToString("N2")</p>
+        <strong>สุทธิ ฿@((Model.TransferReceived-Model.TransferRefunded).ToString("N2"))</strong>
+    </div>
+</div>
+<div class="panel no-print">
+    <h2>คำขอค้างทั้งหมด</h2>
+    <p>
+        <a class="underline-link" href="/Refunds?status=PendingApproval">รออนุมัติ ฿@Model.PendingAmount.ToString("N2")</a>, อนุมัติรอคืน/กำลังดำเนินการ ฿@Model.ApprovedAmount.ToString("N2")</p>
+    <p class="muted">ยังไม่นำคำขอค้างมาหักยอดเงินจริง</p>
+</div>
+{
+}
+@if (Model.LegacyRefunds>0)
+{
+    <p class="finance-notice">มีรายการคืนเงินเดิม @Model.LegacyRefunds รายการที่ไม่มีวันที่คืน ต้องกระทบยอดแยก ไม่สร้างวันที่คืนย้อนหลังแทนข้อมูลที่ขาด</p>
+}
+<h2>รายการรับและคืน, @Model.From.ToString("dd/MM/yyyy") ถึง @Model.To.ToString("dd/MM/yyyy")</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>วันที่</th>
+                <th>ประเภท</th>
+                <th>ออเดอร์</th>
+                <th>ช่องทาง</th>
+                <th>จำนวนเงิน</th>
+                <th>เอกสาร</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.Entries)
+            {
+                string entryLabel = "คืนเงิน";
+                string documentUrl = "/Refunds/Details/" + entry.Id;
+                if (entry.Kind == "Receipt")
+                {
+                    entryLabel = "รับชำระ";
+                    documentUrl = "/Orders/Receipt/" + entry.OrderId;
+                }
+
+                <tr>
+                    <td>@entry.OccurredAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@entryLabel</td>
+                    <td>#@entry.OrderId</td>
+                    <td>@(entry.Method=="Cash"?"เงินสด":"โอนเงิน")</td>
+                    <td>฿@entry.Amount.ToString("N2")</td>
+                    <td>
+                        <a class="underline-link" href="@documentUrl">ดูเอกสาร</a>, <a href="/Orders/Details/@entry.OrderId">ออเดอร์</a>
+                    </td>
+                </tr>
+            }
+            @if (Model.Entries.Count == 0)
+            {
+                <tr>
+                    <td colspan="6">ไม่มีรายการในช่วงวันที่นี้</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pagination"/>
+<p class="muted">ออกรายงาน @BusinessTime.Now.ToString("dd/MM/yyyy HH:mm"), การบันทึกคืนย้อนหลังอาจเพิ่มยอดคืนของวันก่อน รายงานนี้ยังไม่ใช่การล็อกงวดบัญชี</p>

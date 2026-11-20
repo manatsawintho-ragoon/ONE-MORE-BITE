@@ -1,0 +1,194 @@
+@using System.Text.Json
+@{
+    var team = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+    var accountant = User.IsInRole("Accountant");
+    var count = (JsonSerializer.Deserialize<List<CartLine>>(Context.Session.GetString("Cart")??"[]")??new List<CartLine>()).Sum(x=>x.Quantity);
+}
+<header class="topbar">
+    <a class="brand" href="/">
+        <img class="brand-image" src="/images/brand-mark.png" alt="" width="44" height="44"/>
+        <span>เอาอีก<small>ONE MORE BITE</small>
+        </span>
+    </a>
+    <nav class="desktop-nav" aria-label="เมนูหลัก">
+        <a href="/">หน้าหลัก</a>
+        <a href="/Menu">
+            <partial name="_Icon" model='"food"'/>เมนูอาหาร</a>
+        @if (!accountant)
+        {
+            <a href="/Reservations">
+                <partial name="_Icon" model='"calendar"'/>จองโต๊ะ
+                @if (User.Identity?.IsAuthenticated == true && !team)
+                {
+                    <span class="navigation-count" data-notification-count="reservations" data-count-label="แจ้งเตือนจองโต๊ะที่ยังไม่อ่าน" hidden></span>
+                }
+            </a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a href="/Orders">
+                    <partial name="_Icon" model='"receipt"'/>ออเดอร์ของฉัน
+                    @if (User.Identity?.IsAuthenticated == true && !team)
+                    {
+                        <span class="navigation-count" data-notification-count="orders" data-count-label="แจ้งเตือนออเดอร์ของฉันที่ยังไม่อ่าน" hidden></span>
+                    }
+                </a>
+            }
+        }
+    </nav>
+    <div class="nav-actions">
+        @if (!accountant)
+        {
+            <a class="cart-link" href="/Cart" aria-label="ตะกร้าอาหาร">
+                <partial name="_Icon" model='"cart"'/>
+                <span class="cart-label">ตะกร้า</span>
+                <span class="cart-count" data-cart-count aria-live="polite" aria-atomic="true">@count</span>
+            </a>
+        }
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <partial name="_Notifications"/>
+            <details class="account-menu">
+                <summary data-account-toggle aria-label="เมนูบัญชี">
+                    <partial name="_Icon" model='"user"'/>
+                    <span class="account-name">@User.Identity.Name</span>
+                    <partial name="_Icon" model='"chevron"'/>
+                </summary>
+                <div class="account-panel">
+                    <strong>@User.Identity.Name</strong>
+                    @if (User.IsInRole("Accountant") || User.IsInRole("Manager") || User.IsInRole("Admin"))
+                    {
+                        <a href="/Finance">
+                            <partial name="_Icon" model='"chart"'/>การเงินรับและคืน
+                        </a>
+                        <a href="/Finance/Reconcile">
+                            <partial name="_Icon" model='"clipboard"'/>กระทบยอดประจำวัน
+                        </a>
+                    }
+                    <a href="/Refunds">
+                        <partial name="_Icon" model='"refund"'/>รายการคืนเงิน
+                        <span class="navigation-count" data-notification-count="refunds" data-count-label="รายการคืนเงินที่ต้องติดตาม" hidden></span>
+                    </a>
+                    @if (team)
+                    {
+                        <a href="/Staff/Orders">
+                            <partial name="_Icon" model='"receipt"'/>ออเดอร์ทั้งหมด
+                            <span class="navigation-count" data-notification-count="orders" data-count-label="ออเดอร์รับแล้วที่รอเริ่มงาน" hidden></span>
+                        </a>
+                        <a href="/Staff/Kitchen">
+                            <partial name="_Icon" model='"clock"'/>คิวครัว
+                            <span class="navigation-count" data-notification-count="kitchen" data-count-label="ออเดอร์ในครัวที่ยังไม่จบงาน" hidden></span>
+                        </a>
+                        <a href="/Staff/Reservations">
+                            <partial name="_Icon" model='"calendar"'/>การจองโต๊ะ
+                            <span class="navigation-count" data-notification-count="reservations" data-count-label="การจองรอยืนยันที่ยังไม่พ้นเวลา" hidden></span>
+                        </a>
+                        <a href="/Staff">
+                            <partial name="_Icon" model='"grid"'/>จัดการหน้าร้าน</a>
+                        <a href="/">
+                            <partial name="_Icon" model='"food"'/>ดูเว็บไซต์ร้าน</a>
+                    }
+                    <a href="/Account/Profile">
+                        <partial name="_Icon" model='"user"'/>ข้อมูลของฉัน</a>
+                    @if (!accountant)
+                    {
+                        <a href="/Orders">
+                            <partial name="_Icon" model='"receipt"'/>ออเดอร์ของฉัน
+                            @if (User.Identity?.IsAuthenticated == true && !team)
+                            {
+                                <span class="navigation-count" data-notification-count="orders" data-count-label="แจ้งเตือนออเดอร์ของฉันที่ยังไม่อ่าน" hidden></span>
+                            }
+                        </a>
+                        <a href="/Reservations">
+                            <partial name="_Icon" model='"calendar"'/>การจองของฉัน
+                            @if (User.Identity?.IsAuthenticated == true && !team)
+                            {
+                                <span class="navigation-count" data-notification-count="reservations" data-count-label="แจ้งเตือนการจองของฉันที่ยังไม่อ่าน" hidden></span>
+                            }
+                        </a>
+                    }
+                    <form method="post" action="/Account/Logout">
+                        @Html.AntiForgeryToken()
+                        <button>
+                            <partial name="_Icon" model='"logout"'/>ออกจากระบบ</button>
+                    </form>
+                </div>
+            </details>
+        }
+        else
+        {
+            <a class="account" href="/Account/Login">
+                <partial name="_Icon" model='"user"'/>
+                <span class="login-label">เข้าสู่ระบบ</span>
+            </a>
+        }
+        <button type="button" class="icon-button mobile-nav-toggle" data-open-drawer aria-controls="navigation-drawer" aria-expanded="false" aria-label="เปิดเมนู">
+            <partial name="_Icon" model='"menu"'/>
+        </button>
+    </div>
+</header>
+<dialog id="navigation-drawer" class="navigation-drawer" aria-labelledby="drawer-title">
+    <div class="drawer-head">
+        <h2 id="drawer-title">เมนู</h2>
+        <button type="button" class="icon-button" data-close-drawer aria-label="ปิดเมนู">
+            <partial name="_Icon" model='"close"'/>
+        </button>
+    </div>
+    <nav aria-label="เมนูบนมือถือ">
+        @if (team)
+        {
+            <a href="/Staff/Orders">
+                <partial name="_Icon" model='"receipt"'/>ออเดอร์ทั้งหมด
+                <span class="navigation-count" data-notification-count="orders" data-count-label="ออเดอร์รับแล้วที่รอเริ่มงาน" hidden></span>
+            </a>
+            <a href="/Staff/Kitchen">
+                <partial name="_Icon" model='"clock"'/>คิวครัว
+                <span class="navigation-count" data-notification-count="kitchen" data-count-label="ออเดอร์ในครัวที่ยังไม่จบงาน" hidden></span>
+            </a>
+            <a href="/Staff/Reservations">
+                <partial name="_Icon" model='"calendar"'/>การจองโต๊ะ
+                <span class="navigation-count" data-notification-count="reservations" data-count-label="การจองรอยืนยันที่ยังไม่พ้นเวลา" hidden></span>
+            </a>
+        }
+
+        @if (User.IsInRole("Accountant") || User.IsInRole("Manager") || User.IsInRole("Admin"))
+        {
+            <a href="/Finance">
+                <partial name="_Icon" model='"chart"'/>การเงินรับและคืน
+            </a>
+            <a href="/Finance/Reconcile">
+                <partial name="_Icon" model='"clipboard"'/>กระทบยอดประจำวัน
+            </a>
+        }
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a href="/Refunds">
+                <partial name="_Icon" model='"refund"'/>รายการคืนเงิน
+                <span class="navigation-count" data-notification-count="refunds" data-count-label="รายการคืนเงินที่ต้องติดตาม" hidden></span>
+            </a>
+        }
+        <a href="/Menu">
+            <partial name="_Icon" model='"food"'/>เมนูอาหาร</a>
+        @if (!accountant)
+        {
+            <a href="/Cart">
+                <partial name="_Icon" model='"cart"'/>ตะกร้าอาหาร</a>
+            <a href="/Reservations">
+                <partial name="_Icon" model='"calendar"'/>จองโต๊ะ
+                @if (User.Identity?.IsAuthenticated == true && !team)
+                {
+                    <span class="navigation-count" data-notification-count="reservations" data-count-label="แจ้งเตือนจองโต๊ะที่ยังไม่อ่าน" hidden></span>
+                }
+            </a>
+            <a href="/Orders">
+                <partial name="_Icon" model='"receipt"'/>ออเดอร์ของฉัน
+                @if (User.Identity?.IsAuthenticated == true && !team)
+                {
+                    <span class="navigation-count" data-notification-count="orders" data-count-label="แจ้งเตือนออเดอร์ของฉันที่ยังไม่อ่าน" hidden></span>
+                }
+            </a>
+        }
+        <a href="@(User.Identity?.IsAuthenticated==true?"/Account/Profile":"/Account/Login")">
+            <partial name="_Icon" model='"user"'/>@(User.Identity?.IsAuthenticated==true?"ข้อมูลของฉัน":"เข้าสู่ระบบ")</a>
+        <a class="staff-drawer-link" href="/Account/StaffLogin">เข้าสู่ระบบพนักงาน</a>
+    </nav>
+</dialog>

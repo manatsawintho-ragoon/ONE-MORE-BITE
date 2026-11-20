@@ -1,0 +1,8 @@
+@model List<Reservation>
+@{
+    ViewData["Title"] = "จัดการการจอง";
+}
+<h1>การจองโต๊ะ</h1>
+<p>ยืนยันโต๊ะ ต้อนรับลูกค้า และปิดรอบบริการ</p>
+<partial name="_Bookings" model="Model"/>
+<partial name="_Pagination"/>

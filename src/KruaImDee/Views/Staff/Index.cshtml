@@ -1,0 +1,158 @@
+@model List<MenuItem>
+@{
+    ViewData["Title"] = "ขายหน้าร้าน";
+    var categories = Model.Select(x => x.Category).DistinctBy(x => x.Id).ToList();
+}
+<section class="cashier" data-pos>
+    <div class="cashier-heading">
+        <div>
+            <h1>ขายหน้าร้าน</h1>
+            <p>เลือกอาหาร แล้วรับชำระเงินหรือส่งครัว</p>
+        </div>
+        <div class="cashier-tools">
+            <a href="/Staff/CustomerDisplay" target="one-more-bite-customer" rel="noopener" class="button secondary" data-open-customer-display>
+                <partial name="_Icon" model='"grid"'/> แสดงจอลูกค้า</a>
+            <a href="/Staff/Orders" class="text-button">ออเดอร์ทั้งหมด</a>
+        </div>
+    </div>
+    <form id="pos-token" hidden>
+        @Html.AntiForgeryToken()
+    </form>
+    <div class="cashier-grid">
+        <section class="cashier-menu" aria-label="เลือกเมนู">
+            <label class="pos-search-label">
+                <partial name="_Icon" model='"search"'/>
+                <input type="search" placeholder="ค้นหาชื่ออาหาร" aria-label="ค้นหาอาหารในหน้าร้าน" data-pos-search/>
+            </label>
+            <div class="pos-categories" aria-label="หมวดอาหาร">
+                <button type="button" data-pos-category="" aria-pressed="true">ทั้งหมด</button>
+                @foreach (var category in categories)
+                {
+                    <button type="button" data-pos-category="@category.Id" aria-pressed="false">@category.Name</button>
+                }
+            </div>
+            <div class="cashier-products">
+                @foreach (var item in Model)
+                {
+                    <button type="button" class="cashier-product" data-pos-add="@item.Id" data-category="@item.CategoryId" data-name="@item.Name" data-sold-out="@(item.SoldOut ? "true" : "false")" disabled="@item.SoldOut" aria-label="เพิ่ม @item.Name">
+                        <img src="@item.ImageUrl" alt="" loading="lazy"/>
+                        <span class="cashier-product-name">@item.Name</span>
+                        <span class="cashier-product-price">
+                            <strong>฿@item.EffectivePrice.ToString("N2")</strong>
+                            @if (item.DiscountPercent > 0)
+                            {
+                                <del>฿@item.Price.ToString("N2")</del>
+                            }
+                        </span>
+                        @if (item.SoldOut)
+                        {
+                            <small>หมดชั่วคราว</small>
+                        }
+                    </button>
+                }
+            </div>
+            <p data-pos-no-results hidden class="empty">ไม่พบเมนู ลองค้นหาด้วยคำอื่น</p>
+        </section>
+        <section class="cashier-bill" aria-labelledby="bill-title" data-pos-bill>
+            <div class="bill-heading">
+                <h2 id="bill-title">บิลปัจจุบัน</h2>
+                <button type="button" class="text-button" data-pos-new disabled>เปิดบิลใหม่</button>
+            </div>
+            <p class="pos-state-label" data-pos-state-label>กำลังเปิดรายการ</p>
+            <div class="pos-message" role="status" aria-live="polite" data-pos-message></div>
+            <div class="pos-lines" data-pos-lines>
+                <p class="pos-empty">เลือกอาหารทางซ้ายเพื่อเริ่มบิล</p>
+            </div>
+            <form class="pos-options" data-pos-form data-pos-options>
+                <details>
+                    <summary>
+                        <span data-pos-table-label>รับกลับบ้าน</span>
+                        <small>เลือกโต๊ะ</small>
+                    </summary>
+                    <partial name="_TablePicker" model="(IEnumerable<DiningTable>)ViewBag.Tables"/>
+                    </details>
+                    <details>
+                        <summary>ส่วนลดและหมายเหตุ <span>+</span>
+                        </summary>
+                        <label>รหัสส่วนลด<input name="promo" placeholder="กรอกรหัสส่วนลด ถ้ามี" maxlength="30"/>
+                        </label>
+                        <label>หมายเหตุทั้งบิล<textarea name="note" placeholder="เช่น รับอาหารเวลา 12:30 น." maxlength="300"></textarea>
+                        </label>
+                        <button type="submit" class="button secondary">ใช้กับบิลนี้</button>
+                    </details>
+                </form>
+                <div class="pos-totals">
+                    <div>
+                        <span>ค่าอาหาร</span>
+                        <span data-pos-subtotal>฿0.00</span>
+                    </div>
+                    <div>
+                        <span>ส่วนลด</span>
+                        <span data-pos-discount>฿0.00</span>
+                    </div>
+                    <div>
+                        <span>VAT 7%</span>
+                        <span data-pos-vat>฿0.00</span>
+                    </div>
+                    <div class="pos-grand-total">
+                        <strong>ยอดชำระ</strong>
+                        <strong data-pos-total>฿0.00</strong>
+                    </div>
+                </div>
+                <div class="pos-actions">
+                    <button type="button" class="button wide" data-pos-pay disabled>รับชำระเงิน</button>
+                    <button type="button" class="button secondary wide" data-pos-send disabled>ส่งครัว, ชำระภายหลัง</button>
+                    <small class="field-help">ส่งครัวก่อนชำระได้สำหรับออเดอร์ที่เลือกโต๊ะ</small>
+                    <a class="button wide" data-pos-receipt hidden>พิมพ์ใบเสร็จ</a>
+                    <button type="button" class="text-button" data-pos-cancel hidden>ยกเลิกบิลที่รอชำระ</button>
+                </div>
+            </section>
+        </div>
+        <dialog class="pos-payment-dialog" id="pos-payment-dialog" aria-labelledby="pos-payment-title">
+            <div class="drawer-head">
+                <h2 id="pos-payment-title">รับชำระเงิน</h2>
+                <button type="button" class="icon-button" data-pos-close-payment aria-label="ปิดหน้ารับชำระ">
+                    <partial name="_Icon" model='"close"'/>
+                </button>
+            </div>
+            <form data-pos-form data-pos-payment-form>
+                <div class="pos-payment-total">
+                    <span>ยอดชำระ</span>
+                    <strong data-pos-payment-total>฿0.00</strong>
+                </div>
+                <fieldset class="pos-payment-method">
+                    <legend>วิธีชำระเงิน</legend>
+                    <label>
+                        <input type="radio" name="method" value="Cash" checked/> เงินสด</label>
+                    <label>
+                        <input type="radio" name="method" value="Transfer"/> โอนเงิน</label>
+                </fieldset>
+                <div data-pos-cash>
+                    <label>รับเงิน (บาท)<input name="received" type="number" min="0" step="0.01" placeholder="กรอกยอดเงินที่รับ" required inputmode="decimal"/>
+                    </label>
+                    <div class="cash-shortcuts">
+                        <button type="button" data-pos-exact>รับพอดี</button>
+                        <button type="button" data-pos-cash-value="100">100</button>
+                        <button type="button" data-pos-cash-value="500">500</button>
+                        <button type="button" data-pos-cash-value="1000">1,000</button>
+                    </div>
+                    <div class="pos-change">
+                        <span>เงินทอน</span>
+                        <strong data-pos-change>฿0.00</strong>
+                    </div>
+                </div>
+                <div data-pos-transfer hidden>
+                    <partial name="_TransferQr" model="0m"/>
+                    <label class="check">
+                        <input type="checkbox" name="transferConfirmed" value="true" disabled/> ตรวจสอบยอดโอนเข้าบัญชีแล้ว</label>
+                    <small class="field-help">ตรวจยอดและเวลาชำระก่อนกดยืนยัน</small>
+                </div>
+                <p class="pos-payment-error" role="alert" data-pos-payment-error></p>
+                <button type="submit" class="button wide" data-pos-confirm>ยืนยันรับชำระและส่งครัว</button>
+            </form>
+        </dialog>
+    </section>
+    @section Scripts
+    {
+        <script src="~/js/pos.js" asp-append-version="true"></script>
+    }

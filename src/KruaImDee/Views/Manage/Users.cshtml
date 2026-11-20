@@ -1,0 +1,64 @@
+@model List<AppUser>
+@{
+    ViewData["Title"] = "ผู้ใช้งาน";
+    var editedItem = (AppUser)ViewBag.Edit;
+}
+<h1>ผู้ใช้งานและสิทธิ์เข้าถึง</h1>
+<div class="manage-grid">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ชื่อ / อีเมล</th>
+                    <th>บทบาท</th>
+                    <th>สถานะ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@user.Name</strong>
+                            <small>@user.Email</small>
+                        </td>
+                        <td>
+                            <span class="badge">@user.Role</span>
+                        </td>
+                        <td>@(user.Active?"ใช้งาน":"ระงับ")</td>
+                        <td>
+                            <a class="red" href="?id=@user.Id">แก้ไข</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <form class="panel" method="post" action="/Manage/SaveUser">
+        @Html.AntiForgeryToken()
+        <h2>@(editedItem.Id==0?"เพิ่มผู้ใช้":"แก้ไขผู้ใช้")</h2>
+        <input name="id" value="@editedItem.Id" type="hidden"/>
+        <label>ชื่อ<input name="name" value="@editedItem.Name" required maxlength="100"/>
+        </label>
+        <label>อีเมล<input name="email" value="@editedItem.Email" type="email" required maxlength="180"/>
+        </label>
+        <label>เบอร์โทร<input name="phone" value="@editedItem.Phone"/>
+        </label>
+        <label>บทบาท<select name="role">
+                @foreach (var role in new[]{"Admin","Manager","Staff","Accountant","Customer"})
+                {
+                    <option selected="@(role==editedItem.Role)">@role</option>
+                }
+            </select>
+        </label>
+        <label>รหัสผ่านใหม่<input name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password"/>
+        </label>
+        <small>เว้นว่างเพื่อใช้รหัสเดิม (บัญชีใหม่ต้องระบุ)</small>
+        <label class="check">
+            <input name="active" type="checkbox" value="true" checked="@editedItem.Active"/> เปิดใช้งานบัญชี</label>
+        <button class="button">บันทึกผู้ใช้</button>
+        <a class="back-link" href="/Manage/Users">เพิ่มรายการใหม่</a>
+    </form>
+</div>
+<partial name="_Pagination"/>

@@ -1,0 +1,60 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="th">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1"/>
+        <title>รายการอาหารของคุณ, เอาอีก</title>
+        <link rel="stylesheet" href="~/css/design.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/pos.css" asp-append-version="true"/>
+    </head>
+    <body class="customer-display" data-customer-display>
+        <header class="customer-display-header">
+            <img src="/images/brand-mark.png" alt=""/>
+            <div>
+                <h1>เอาอีก</h1>
+                <span>ONE MORE BITE</span>
+            </div>
+            <p>รายการอาหารของคุณ</p>
+        </header>
+        <main class="customer-display-grid">
+            <section class="customer-display-items">
+                <h2 data-display-heading>ยินดีต้อนรับ</h2>
+                <p data-display-status role="status" aria-live="polite">เลือกอาหารกับพนักงานได้เลย</p>
+                <div data-display-lines></div>
+            </section>
+            <section class="customer-display-summary">
+                <div class="display-totals">
+                    <div>
+                        <span>ค่าอาหาร</span>
+                        <strong data-display-subtotal>฿0.00</strong>
+                    </div>
+                    <div>
+                        <span>ส่วนลด</span>
+                        <strong data-display-discount>฿0.00</strong>
+                    </div>
+                    <div>
+                        <span>VAT 7%</span>
+                        <strong data-display-vat>฿0.00</strong>
+                    </div>
+                    <div class="display-total">
+                        <span>ยอดชำระ</span>
+                        <strong data-display-total>฿0.00</strong>
+                    </div>
+                </div>
+                <div data-display-qr hidden>
+                    <partial name="_TransferQr" model="0m"/>
+                </div>
+                <div class="display-paid" data-display-paid hidden>
+                    <partial name="_Icon" model='"check"'/>
+                    <h2>รับชำระแล้ว</h2>
+                    <p>ขอบคุณที่ใช้บริการ</p>
+                    <strong data-display-change></strong>
+                </div>
+            </section>
+        </main>
+        <script src="~/js/customer-display.js" asp-append-version="true"></script>
+    </body>
+</html>

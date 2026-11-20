@@ -1,0 +1,55 @@
+@model List<Promotion>
+@{
+    ViewData["Title"] = "โปรโมชั่น";
+    var editedItem = (Promotion)ViewBag.Edit;
+}
+<h1>โปรโมชั่น</h1>
+<div class="manage-grid">
+    <div>
+        @foreach (var promotion in Model)
+        {
+            <article class="promo-card">
+                <div>
+                    <span class="eyebrow">@promotion.Code</span>
+                    <h2>@promotion.Name</h2>
+                    <p>ยอดขั้นต่ำ ฿@promotion.Minimum.ToString("N2"), @promotion.StartsAt.ToString("dd/MM/yyyy")  ถึง  @promotion.EndsAt.ToString("dd/MM/yyyy")</p>
+                    <a class="red" href="?id=@promotion.Id">แก้ไข </a>
+                    <form method="post" action="/Manage/Deactivate">
+                        @Html.AntiForgeryToken()
+                        <input name="kind" value="Promotions" type="hidden"/>
+                        <input name="id" value="@promotion.Id" type="hidden"/>
+                        <button class="text-button">@(promotion.Active?"ปิดใช้งาน":"ปิดอยู่")</button>
+                    </form>
+                </div>
+                <strong>@promotion.Value.ToString(promotion.Percentage?"0.##":"N2")<small>@(promotion.Percentage?"%":"บาท")</small>
+                </strong>
+            </article>
+        }
+    </div>
+    <form class="panel" method="post" action="/Manage/SavePromotion">
+        @Html.AntiForgeryToken()
+        <h2>@(editedItem.Id==0?"เพิ่มโปรโมชั่น":"แก้ไขโปรโมชั่น")</h2>
+        <input name="id" type="hidden" value="@editedItem.Id"/>
+        <label>รหัส<input name="code" value="@editedItem.Code" required maxlength="30"/>
+        </label>
+        <label>ชื่อโปรโมชั่น<input name="name" value="@editedItem.Name" required/>
+        </label>
+        <div class="form-grid">
+            <label>ส่วนลด<input name="value" type="number" step="0.01" min="0.01" value="@editedItem.Value" required/>
+            </label>
+            <label>ยอดขั้นต่ำ<input name="minimum" type="number" step="0.01" min="0" value="@editedItem.Minimum" required/>
+            </label>
+        </div>
+        <label class="check">
+            <input name="percentage" type="checkbox" value="true" checked="@editedItem.Percentage"/> คิดเป็นเปอร์เซ็นต์ (ไม่เลือก = บาท)</label>
+        <label>เริ่ม<input name="startsAt" type="datetime-local" value="@editedItem.StartsAt.ToString("yyyy-MM-ddTHH:mm")" required/>
+        </label>
+        <label>สิ้นสุด<input name="endsAt" type="datetime-local" value="@editedItem.EndsAt.ToString("yyyy-MM-ddTHH:mm")" required/>
+        </label>
+        <label class="check">
+            <input name="active" type="checkbox" value="true" checked="@editedItem.Active"/> เปิดใช้งาน</label>
+        <button class="button">บันทึก</button>
+        <a class="back-link" href="/Manage/Promotions">เพิ่มรายการใหม่</a>
+    </form>
+</div>
+<partial name="_Pagination"/>

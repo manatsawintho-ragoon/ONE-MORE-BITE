@@ -1,0 +1,9 @@
+@model List<Order>
+@{
+    ViewData["Title"] = "ออเดอร์ของฉัน";
+}
+<section class="section">
+    <h1>ออเดอร์ของฉัน</h1>
+    <partial name="_OrderList" model="Model"/>
+</section>
+<partial name="_Pagination"/>

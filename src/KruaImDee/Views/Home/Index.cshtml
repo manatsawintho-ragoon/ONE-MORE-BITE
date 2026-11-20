@@ -1,0 +1,99 @@
+@model List<MenuItem>
+@{
+    ViewData["Title"] = "เอาอีก มื้อที่ชอบ";
+    var reviews = Model.SelectMany(x => x.Reviews).OrderByDescending(x => x.CreatedAt).Take(3).ToList();
+}
+<section class="hero">
+    <div class="hero-copy">
+        <h1>จานที่ชอบ<br/>
+            <em>สั่งได้เลย</em>
+        </h1>
+        <p>เลือกอาหาร ทานที่ร้านหรือรับกลับบ้าน<br/>เราปรุงให้ตามออเดอร์</p>
+        <div class="hero-actions">
+            <a class="button" href="/Menu">สั่งอาหาร</a>
+            <a class="underline-link" href="/Reservations">จองโต๊ะล่วงหน้า</a>
+        </div>
+        <div class="hero-foot">เปิดทุกวัน 10:00 ถึง 22:00 น.</div>
+    </div>
+    <div class="hero-image">
+        <img src="/images/hero-generated.png" alt="อาหารจากครัวเอาอีก" fetchpriority="high"/>
+    </div>
+</section>
+<section class="section reveal food-carousel" data-carousel aria-label="เมนูจากครัวเอาอีก">
+    <div class="section-head">
+        <div>
+            <h2>เลือกมื้ออร่อยของคุณ</h2>
+            <p>อาหารจานเดียว ของทานเล่น และเครื่องดื่ม ราคาก่อน VAT 7%</p>
+        </div>
+        <div class="carousel-actions">
+            <a class="underline-link" href="/Menu">ดูทั้งหมด</a>
+            <button type="button" class="icon-button" data-carousel-prev aria-label="เมนูก่อนหน้า" aria-controls="home-food-track">
+                <partial name="_Icon" model='"chevron"'/>
+            </button>
+            <button type="button" class="icon-button" data-carousel-next aria-label="เมนูถัดไป" aria-controls="home-food-track">
+                <partial name="_Icon" model='"chevron"'/>
+            </button>
+        </div>
+    </div>
+    <div class="carousel-track" id="home-food-track" data-carousel-track tabindex="0" aria-label="เลื่อนดูเมนูด้วยปุ่มซ้ายขวาหรือปัดหน้าจอ">
+        @foreach (var item in Model)
+        {
+            <partial name="_FoodCard" model="item"/>
+        }
+    </div>
+    <p class="carousel-caption">
+        <span data-carousel-status aria-live="polite"></span>
+        <span>เลื่อนดูจานถัดไป</span>
+    </p>
+</section>
+<section class="food-gallery" aria-label="อาหารจากครัวเอาอีก">
+    <img src="/images/food-02.jpg" alt="เมนูอาหารจานร้อน" loading="lazy"/>
+    <img src="/images/food-05.jpg" alt="อาหารจานโปรด" loading="lazy"/>
+    <img src="/images/food-09.jpg" alt="ผักและเครื่องเคียง" loading="lazy"/>
+</section>
+<section class="section reviews-section">
+    <div class="section-head">
+        <div>
+            <h2>เสียงจากคนที่ได้ทาน</h2>
+            <p>รีวิวจากลูกค้าที่สั่งและชำระเงินแล้ว</p>
+        </div>
+    </div>
+    @if (reviews.Count == 0)
+    {
+        <div class="review-empty">
+            <p>ยังไม่มีรีวิว</p>
+            <span>หลังทานเสร็จ คุณให้คะแนนและเขียนรีวิวที่หน้าเมนูได้</span>
+        </div>
+    }
+    else
+    {
+        <div class="review-grid">
+            @foreach (var review in reviews)
+            {
+                <article class="review-card">
+                    <div class="review-stars" aria-label="@review.Rating จาก 5 ดาว">
+                        @for (var star = 1; star <= 5; star++)
+                        {
+                            <span class="@(star <= review.Rating ? "filled" : "")">
+                                <partial name="_Star"/>
+                            </span>
+                        }
+                    </div>
+                    <p>@review.Comment</p>
+                    <strong>@review.User.Name</strong>
+                    <small>@review.CreatedAt.ToString("dd/MM/yyyy"), ยืนยันการสั่งซื้อแล้ว</small>
+                </article>
+            }
+        </div>
+    }
+</section>
+<section class="story reveal">
+    <div>
+        <h2>มีนัดทานข้าว<br/>จองโต๊ะไว้ก่อนได้</h2>
+        <p>เลือกวัน เวลา และจำนวนคน<br/>ตรวจสอบสถานะการจองได้ในบัญชีของคุณ</p>
+        <a class="button" href="/Reservations">จองโต๊ะ</a>
+    </div>
+    <div class="story-art">
+        <img src="/images/food-07.jpg" alt="เมนูสำหรับมื้อร่วมกัน" loading="lazy"/>
+    </div>
+</section>

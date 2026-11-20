@@ -1,0 +1,60 @@
+@model List<Order>
+@if (Model.Count == 0)
+{
+    <div class="empty">
+        <h2>ยังไม่มีออเดอร์</h2>
+        <p>เริ่มมื้อแรกกับเราได้เลย</p>
+        <a class="button" href="/Menu">เลือกเมนู </a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ออเดอร์</th>
+                    <th>วันที่ / เวลา</th>
+                    <th>ประเภท</th>
+                    <th>สถานะ</th>
+                    <th>ยอดรวม</th>
+                    <th>การชำระ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    string paymentLabel = "รอชำระ";
+                    if (order.Payment != null)
+                    {
+                        if (order.Payment.Refunded)
+                        {
+                            paymentLabel = "คืนเงินแล้ว";
+                        }
+                        else
+                        {
+                            paymentLabel = "ชำระแล้ว";
+                        }
+                    }
+
+                    <tr>
+                        <td>
+                            <strong>#@order.Id.ToString("D4")</strong>
+                        </td>
+                        <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(order.DiningTable?.Name??"รับกลับบ้าน")</td>
+                        <td>
+                            <span class="badge @order.Status">@Rules.Label(order.Status)</span>
+                        </td>
+                        <td>฿@order.Total.ToString("N2")</td>
+                        <td>@paymentLabel</td>
+                        <td>
+                            <a class="red" href="/Orders/Details/@order.Id">รายละเอียด </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,160 @@
+@model Order
+@{
+    ViewData["Title"] = "ออเดอร์ #"+Model.Id;
+    var team = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+}
+<section class="section">
+    <div class="section-head">
+        <div>
+            <h1>ออเดอร์ #@Model.Id.ToString("D4")</h1>
+            <p>@Model.CreatedAt.ToString("dd/MM/yyyy, HH:mm"), @(Model.DiningTable?.Name??"รับกลับบ้าน")</p>
+        </div>
+        <span class="badge @Model.Status">@Rules.Label(Model.Status)</span>
+    </div>
+    <div class="checkout-grid">
+        <div>
+            <div class="progress-track">
+                @foreach (var status in new[]{"Received","Preparing","Ready","Served"})
+                {
+                    <span class="@(Model.Status==status?"current":"")">@Rules.Label(status)</span>
+                }
+            </div>
+            <div class="panel">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="line-item">
+                        <div>
+                            <strong>@item.Quantity รายการ @item.Name</strong>
+                            <p>@item.Note</p>
+                            @if (User.IsInRole("Customer") && Model.Status == "Served" && Model.Payment != null && !Model.Payment.Refunded)
+                            {
+                                <a class="underline-link" href="/Menu/Details/@item.MenuItemId#reviews">เขียนรีวิว</a>
+                            }
+                        </div>
+                        <strong>฿@((item.Quantity*item.UnitPrice).ToString("N2"))</strong>
+                    </div>
+                }
+                <p class="muted">หมายเหตุ: @(string.IsNullOrWhiteSpace(Model.Note)?"ไม่มี":Model.Note)</p>
+            </div>
+            <a class="back-link" href="@(team?"/Staff/Orders":"/Orders")"> กลับรายการออเดอร์</a>
+        </div>
+        <div>
+            <div class="panel">
+                <h2>สรุปยอด</h2>
+                <div class="line-item">
+                    <span>ค่าอาหาร</span>
+                    <span>฿@Model.Subtotal.ToString("N2")</span>
+                </div>
+                <div class="line-item">
+                    <span>ส่วนลด @Model.PromoCode</span>
+                    <span>฿@Model.Discount.ToString("N2")</span>
+                </div>
+                <div class="line-item">
+                    <span>VAT @Model.VatRate.ToString("0.##")%</span>
+                    <span>฿@Model.VatAmount.ToString("N2")</span>
+                </div>
+                <div class="total-row">
+                    <span>ยอดสุทธิ</span>
+                    <strong>฿@Model.Total.ToString("N2")</strong>
+                </div>
+                @if (Model.Payment != null)
+                {
+                    <p class="badge">@(Model.Payment.Refunded ? "คืนเงินแล้ว" : "ชำระแล้ว"), @(Model.Payment.Method == "Cash" ? "เงินสด" : "โอนเงิน")</p>
+                    <a class="button wide" href="/Orders/Receipt/@Model.Id">ดูใบเสร็จ </a>
+                    @if (!Model.Payment.Refunded)
+                    {
+                        <a class="button secondary wide" href="/Invoices/Create/@Model.Id">ใบกำกับภาษี</a>
+                    }
+                }
+                else if (Model.Status != "Cancelled")
+                {
+                    <p class="muted">ชำระเงินกับพนักงานที่หน้าร้าน</p>
+                    @if (!team && !User.IsInRole("Accountant"))
+                    {
+                        <form method="post" action="/Orders/StartPayment">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id"/>
+                            <button class="button wide">ชำระเงิน</button>
+                            <p class="field-help">ชำระเงินและแนบสลิปในขั้นตอนถัดไป</p>
+                        </form>
+                    }
+                }
+                @if (team && !string.IsNullOrWhiteSpace(Model.Payment?.SlipFileName))
+                {
+                    <a class="button secondary wide" href="/Orders/Slip/@Model.Id" target="_blank" rel="noopener">ดูสลิปการชำระเงิน</a>
+                }
+                @if (team && Model.Payment == null && Model.Status != "Cancelled")
+                {
+                    <form method="post" action="/Staff/Settle" data-staff-payment data-payment-total="@Model.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                        @Html.AntiForgeryToken()
+                        <input name="id" value="@Model.Id" type="hidden"/>
+                        <label>วิธีชำระเงิน<select name="method">
+                                <option value="Cash">เงินสด</option>
+                                <option value="Transfer">โอนเงิน</option>
+                            </select>
+                        </label>
+                        <div data-staff-cash>
+                            <label>ยอดเงินที่รับ<input name="received" type="number" min="@Model.Total" step="0.01" value="@Model.Total" required/>
+                            </label>
+                            <p class="staff-cash-change">เงินทอน <strong data-staff-change>฿0.00</strong>
+                            </p>
+                        </div>
+                        <div data-staff-transfer hidden>
+                            <partial name="_TransferQr" model="Model.Total"/>
+                            <label class="check">
+                                <input name="transferConfirmed" type="checkbox" value="true" required disabled/> ตรวจสอบยอดโอนเข้าบัญชีแล้ว</label>
+                            <small class="field-help">ตรวจยอดและเวลาชำระก่อนกดยืนยัน</small>
+                        </div>
+                        <button class="button wide">ยืนยันรับชำระ</button>
+                    </form>
+                }
+            </div>
+            <div class="panel">
+                <h2>การคืนเงิน</h2>
+                @{
+                    RefundRequest? activeRefund = ViewBag.ActiveRefund;
+                }
+                @if (activeRefund != null)
+                {
+                    <p>สถานะ: @RefundService.Label(activeRefund.Status)</p>
+                    <a class="button secondary" href="/Refunds/Details/@activeRefund.Id">ดูคำขอเดิม</a>
+                }
+                else if (Model.Payment == null)
+                {
+                    <p class="muted">ออเดอร์นี้ยังไม่ชำระเงิน จึงไม่มียอดเงินที่คืนได้ หากต้องการยกเลิกกรุณาติดต่อร้าน</p>
+                }
+                else if (Model.Payment.Refunded)
+                {
+                    <p>คืนเงินแล้ว</p>
+                }
+                else if (Model.Status != "Cancelled" && Model.Payment.Amount > 0)
+                {
+                    <a class="button" href="/Refunds/Create?orderId=@Model.Id">ขอคืนเงิน</a>
+                    <p class="field-help">ขอคืนเต็มยอด ผู้จัดการตรวจอนุมัติก่อน นักบัญชีจึงดำเนินการคืนเงินจริง</p>
+                }
+                @if (Model.Payment != null)
+                {
+                    <a class="underline-link" href="/Refunds?orderId=@Model.Id">ประวัติคำขอคืนเงิน</a>
+                }
+            </div>
+            @if ((User.IsInRole("Admin") || User.IsInRole("Manager")) && Model.Status != "Cancelled" && Model.Payment == null)
+            {
+                <details class="panel danger-zone">
+                    <summary>ยกเลิกออเดอร์ที่ยังไม่ชำระ</summary>
+                    <p class="muted">สำหรับผู้จัดการ ยกเลิกโดยระบุเหตุผล</p>
+                    <form method="post" action="/Staff/Void">
+                        @Html.AntiForgeryToken()
+                        <input name="id" value="@Model.Id" type="hidden"/>
+                        <label>เหตุผล<textarea name="reason" required></textarea>
+                        </label>
+                        <button class="button secondary" data-confirm="ยืนยันยกเลิกและบันทึกเหตุผล?">ยืนยันยกเลิก</button>
+                    </form>
+                </details>
+            }
+        </div>
+    </div>
+</section>
+@section Scripts
+{
+    <script src="~/js/staff-payment.js" asp-append-version="true"></script>
+}

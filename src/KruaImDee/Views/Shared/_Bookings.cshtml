@@ -1,0 +1,86 @@
+@model List<Reservation>
+@{
+    var staff = Context.Request.Path.StartsWithSegments("/Staff");
+}
+@if (Model.Count == 0)
+{
+    <div class="empty">
+        <p>ยังไม่มีรายการจอง</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>การจอง</th>
+                    <th>ผู้จอง</th>
+                    <th>วันและเวลา</th>
+                    <th>จำนวน / โต๊ะ</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var reservation in Model)
+                {
+                    <tr>
+                        <td>#@reservation.Id.ToString("D4")</td>
+                        <td>@reservation.Name<small>@reservation.Phone</small>
+                            <small>@reservation.Note</small>
+                        </td>
+                        <td>@reservation.StartsAt.ToString("dd/MM/yyyy HH:mm")<small>ถึง @reservation.EndsAt.ToString("HH:mm")</small>
+                        </td>
+                        <td>@reservation.Guests คน, @reservation.DiningTable?.Name</td>
+                        <td>
+                            <span class="badge @reservation.Status">@Rules.Label(reservation.Status)</span>
+                        </td>
+                        <td>
+                            @if (staff && (reservation.Status != "Cancelled" && reservation.Status != "Completed"))
+                            {
+                                <form class="inline-form" method="post" action="/Staff/BookingStatus">
+                                    @Html.AntiForgeryToken()
+                                    <input name="id" type="hidden" value="@reservation.Id"/>
+                                    <select name="tableId" aria-label="เลือกโต๊ะ">
+                                        @foreach (DiningTable table in ViewBag.Tables)
+                                        {
+                                            <option value="@table.Id" selected="@(table.Id==reservation.DiningTableId)">@table.Name (@table.Capacity)</option>
+                                        }
+                                    </select>
+                                    <select name="status" aria-label="สถานะ">
+                                        @if (reservation.Status == "Pending")
+                                        {
+                                            <option value="Confirmed">ยืนยันจอง</option>
+                                        }
+                                        @if (reservation.Status == "Confirmed")
+                                        {
+                                            <option value="Seated">เข้ารับบริการ</option>
+                                        }
+                                        @if (reservation.Status == "Seated")
+                                        {
+                                            <option value="Completed">เสร็จสิ้น</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="Cancelled">ยกเลิก</option>
+                                        }
+                                    </select>
+                                    <button class="button small">บันทึก</button>
+                                </form>
+                            }
+                            else if (!staff && (reservation.Status == "Pending" || reservation.Status == "Confirmed"))
+                            {
+                                <form method="post" action="/Reservations/Cancel">
+                                    @Html.AntiForgeryToken()
+                                    <input name="id" type="hidden" value="@reservation.Id"/>
+                                    <button class="text-button red" data-confirm="ยกเลิกการจองนี้?">ยกเลิก</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

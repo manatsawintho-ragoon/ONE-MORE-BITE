@@ -1,0 +1,9 @@
+@model string
+@inject Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersionProvider
+@{
+    // เปลี่ยน URL ตามเนื้อหาไฟล์ เพื่อให้เบราว์เซอร์โหลดไอคอนที่เพิ่มใหม่
+    var spriteUrl = FileVersionProvider.AddFileVersionToPath(Context.Request.PathBase, "/images/icons.svg");
+}
+<svg class="icon" aria-hidden="true" focusable="false">
+    <use href="@(spriteUrl + "#" + Model)"></use>
+</svg>

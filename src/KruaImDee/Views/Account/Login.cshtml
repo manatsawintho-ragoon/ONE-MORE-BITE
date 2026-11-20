@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "เข้าสู่ระบบ";
+}
+<section class="auth-wrap">
+    <div class="auth-art">
+        <h1>สั่งอาหาร<br/>และจองโต๊ะ</h1>
+        <img src="/images/food-04.jpg" alt="อาหารจานโปรด"/>
+    </div>
+    <form class="auth-form" method="post">
+        @Html.AntiForgeryToken()
+        <h1>เข้าสู่ระบบ</h1>
+        <p>เข้าสู่ระบบเพื่อสั่งอาหารและจัดการการจอง</p>
+        <div asp-validation-summary="All" class="validation"></div>
+        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl"/>
+        <label>อีเมล<input name="email" value="@ViewBag.Email" type="email" required autocomplete="username" placeholder="you@example.com"/>
+        </label>
+        <label>รหัสผ่าน<input name="password" type="password" required autocomplete="current-password" placeholder="กรอกรหัสผ่าน"/>
+        </label>
+        <button class="button wide">เข้าสู่ระบบ </button>
+        <p>ยังไม่มีบัญชี? <a class="red" href="/Account/Register">สมัครสมาชิก</a>
+        </p>
+    </form>
+</section>

@@ -1,0 +1,70 @@
+@model IEnumerable<DiningTable>
+@{
+    var booking = ViewData["TableBooking"] as bool? ?? false;
+    var selected = ViewBag.TableId as int?;
+    var states = ViewBag.TableStates as IDictionary<int, string>;
+    var selectable = ViewBag.SelectableTableIds as IEnumerable<int>;
+}
+<fieldset class="table-picker">
+    <legend>@(booking ? "เลือกโต๊ะ" : "รูปแบบการรับอาหาร")</legend>
+    <div class="table-cards">
+        <label class="table-card table-auto">
+            <input type="radio" name="tableId" value="" checked="@(!selected.HasValue)" required/>
+            <span>
+                <partial name="_Icon" model='"food"'/>
+                <strong>@(booking ? "ให้ร้านเลือกโต๊ะ" : "รับกลับบ้าน")</strong>
+                <small>@(booking ? "จัดโต๊ะตามจำนวนคน" : "รับอาหารที่หน้าร้าน")</small>
+            </span>
+        </label>
+        @foreach (var table in Model)
+        {
+            string state = "Available";
+            if (states != null && states.TryGetValue(table.Id, out var savedState))
+            {
+                state = savedState;
+            }
+
+            bool unavailable = false;
+            if (!booking)
+            {
+                if (selectable != null)
+                {
+                    unavailable = !selectable.Contains(table.Id);
+                }
+                else
+                {
+                    unavailable = state != "Available";
+                }
+            }
+
+            string stateLabel = "ว่าง";
+            if (state == "Occupied")
+            {
+                stateLabel = "กำลังใช้งาน";
+            }
+            else if (state == "Reserved")
+            {
+                stateLabel = "มีการจอง";
+            }
+            <label class="table-card @(unavailable ? "unavailable" : "")">
+                <input type="radio" name="tableId" value="@table.Id" checked="@(selected == table.Id && !unavailable)" disabled="@unavailable" required/>
+                <span>
+                    <span class="table-drawing">
+                        <i></i>
+                        <b>@table.Name</b>
+                        <i></i>
+                    </span>
+                    <strong>@table.Capacity ที่นั่ง</strong>
+                    <small class="table-state">@stateLabel @(booking ? "ขณะนี้" : "")</small>
+                </span>
+            </label>
+        }
+    </div>
+    @if (!booking && selected.HasValue && selectable != null && !selectable.Contains(selected.Value))
+    {
+        <p class="field-error" role="alert">โต๊ะที่เลือกไว้ไม่ว่าง กรุณาเลือกโต๊ะใหม่หรือรับกลับบ้านก่อนยืนยัน</p>
+    }
+    <p class="field-help">
+        @(booking ? "เลือกโต๊ะตามวันและเวลาที่ต้องการจอง" : "เลือกโต๊ะที่ว่าง หรือรับอาหารกลับบ้าน")
+    </p>
+</fieldset>

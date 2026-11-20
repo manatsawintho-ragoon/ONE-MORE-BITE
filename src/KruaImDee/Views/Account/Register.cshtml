@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "สมัครสมาชิก";
+}
+<section class="narrow section">
+    <h1>สมัครสมาชิก</h1>
+    <form class="panel" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="validation"></div>
+        <label>ชื่อของคุณ<input name="name" value="@ViewBag.Name" required maxlength="100" placeholder="เช่น น้องเอาอีก กินจุจัง"/>
+        </label>
+        <label>อีเมล<input name="email" value="@ViewBag.Email" type="email" required maxlength="180" placeholder="you@example.com"/>
+        </label>
+        <label>เบอร์โทรศัพท์<input name="phone" value="@ViewBag.Phone" type="tel" required pattern="[0-9]{9,10}" placeholder="เช่น 0812345678"/>
+        </label>
+        <label>รหัสผ่าน<input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password" placeholder="ตั้งรหัสผ่านอย่างน้อย 8 ตัวอักษร"/>
+        </label>
+        <p class="muted">อย่างน้อย 8 ตัวอักษร</p>
+        <button class="button wide">สร้างบัญชี </button>
+    </form>
+</section>

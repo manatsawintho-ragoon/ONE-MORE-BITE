@@ -1,0 +1,11 @@
+@model decimal
+<div class="transfer-qr">
+    <div class="transfer-brand">
+        <img src="/images/brand-mark.png" alt="เอาอีก"/>
+        <span>เอาอีก<small>ONE MORE BITE</small>
+        </span>
+    </div>
+    <p>สแกนเพื่อชำระเงิน</p>
+    <strong data-transfer-amount>฿@Model.ToString("N2")</strong>
+    <img class="transfer-code" src="/images/payment-qr.jpg" alt="คิวอาร์โค้ดชำระเงินร้านเอาอีก"/>
+</div>

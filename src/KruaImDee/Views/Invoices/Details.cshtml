@@ -1,0 +1,84 @@
+@model TaxInvoice
+@using System.Text.Json
+@{
+    ViewData["Title"] = "ใบกำกับภาษี " + Model.Number;
+    var lines = JsonSerializer.Deserialize<List<TaxInvoiceLine>>(Model.LinesJson) ?? new List<TaxInvoiceLine>();
+    var refunded = Model.Order.Payment?.Refunded == true || Model.Order.Status == "Cancelled";
+}
+<section class="section document-sheet tax-invoice">
+    <header class="document-brand">
+        <img src="/images/brand-mark.png" alt="เอาอีก"/>
+        <div>
+            <h1>@Model.SellerName</h1>
+            <p>@Model.SellerAddress</p>
+            <p>เลขประจำตัวผู้เสียภาษี @Model.SellerTaxId<br/>@(Model.SellerBranch == "00000" ? "สำนักงานใหญ่" : "สาขา " + Model.SellerBranch)</p>
+        </div>
+    </header>
+    <div class="document-title">
+        <h2>ใบกำกับภาษี</h2>
+        <div>เลขที่ @Model.Number<br/>วันที่ @Model.IssuedAt.ToString("dd/MM/yyyy")<br/>อ้างอิงใบเสร็จ R-@Model.OrderId.ToString("D6")</div>
+    </div>
+    @if (refunded)
+    {
+        <p class="refund-stamp">ออเดอร์นี้ยกเลิก / คืนเงินแล้ว</p>
+    }
+    <div class="invoice-buyer">
+        <strong>ผู้ซื้อ: @Model.BuyerName</strong>
+        <p>ที่อยู่: @Model.BuyerAddress</p>
+        <p>เลขประจำตัวผู้เสียภาษี: @Model.BuyerTaxId</p>
+        @if (!string.IsNullOrEmpty(Model.BuyerBranch))
+        {
+            <p>@(Model.BuyerBranch == "00000" ? "สำนักงานใหญ่" : "สาขา " + Model.BuyerBranch)</p>
+        }
+    </div>
+    <table class="receipt-items">
+        <thead>
+            <tr>
+                <th>รายการ</th>
+                <th>จำนวน</th>
+                <th>ราคา/หน่วย</th>
+                <th>รวม (บาท)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in lines)
+            {
+                <tr>
+                    <td>@line.Name</td>
+                    <td>@line.Quantity</td>
+                    <td>@line.UnitPrice.ToString("N2")</td>
+                    <td>@((line.UnitPrice * line.Quantity).ToString("N2"))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="receipt-totals">
+        <div class="line-item">
+            <span>รวมค่าอาหาร</span>
+            <span>@Model.Subtotal.ToString("N2")</span>
+        </div>
+        <div class="line-item">
+            <span>ส่วนลด</span>
+            <span>@Model.Discount.ToString("N2")</span>
+        </div>
+        <div class="line-item">
+            <span>มูลค่าก่อน VAT</span>
+            <span>@((Model.Subtotal - Model.Discount).ToString("N2"))</span>
+        </div>
+        <div class="line-item">
+            <span>ภาษีมูลค่าเพิ่ม @Model.VatRate.ToString("0.##")%</span>
+            <span>@Model.VatAmount.ToString("N2")</span>
+        </div>
+        <div class="total-row">
+            <strong>ยอดสุทธิ (บาท)</strong>
+            <strong>@Model.Total.ToString("N2")</strong>
+        </div>
+    </div>
+    <div class="document-footer">
+        <p>ขอบคุณที่ใช้บริการ เอาอีก</p>
+    </div>
+    <div class="no-print invoice-actions">
+        <button class="button" onclick="window.print()">พิมพ์ใบกำกับภาษี</button>
+        <a class="button secondary" href="/Orders/Receipt/@Model.OrderId">ดูใบเสร็จ</a>
+    </div>
+</section>

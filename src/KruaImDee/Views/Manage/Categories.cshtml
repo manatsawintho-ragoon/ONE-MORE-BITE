@@ -1,0 +1,49 @@
+@model List<Category>
+@{
+    ViewData["Title"] = "หมวดหมู่";
+    var editedItem = (Category)ViewBag.Edit;
+}
+<h1>หมวดหมู่อาหาร</h1>
+<div class="manage-grid">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ชื่อหมวดหมู่</th>
+                    <th>สถานะ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var category in Model)
+                {
+                    <tr>
+                        <td>@category.Name</td>
+                        <td>@(category.Active?"เปิดใช้งาน":"ปิดใช้งาน")</td>
+                        <td>
+                            <a class="red" href="?id=@category.Id">แก้ไข</a>
+                            <form method="post" action="/Manage/Deactivate">
+                                @Html.AntiForgeryToken()
+                                <input name="kind" value="Categories" type="hidden"/>
+                                <input name="id" value="@category.Id" type="hidden"/>
+                                <button class="text-button">ปิดใช้งาน</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <form class="panel" method="post" action="/Manage/SaveCategory">
+        @Html.AntiForgeryToken()
+        <h2>@(editedItem.Id==0?"เพิ่มหมวดหมู่":"แก้ไขหมวดหมู่")</h2>
+        <input name="id" type="hidden" value="@editedItem.Id"/>
+        <label>ชื่อหมวดหมู่<input name="name" value="@editedItem.Name" required maxlength="80"/>
+        </label>
+        <label class="check">
+            <input name="active" type="checkbox" value="true" checked="@editedItem.Active"/> เปิดใช้งาน</label>
+        <button class="button">บันทึก</button>
+        <a class="back-link" href="/Manage/Categories">เพิ่มรายการใหม่</a>
+    </form>
+</div>
+<partial name="_Pagination"/>

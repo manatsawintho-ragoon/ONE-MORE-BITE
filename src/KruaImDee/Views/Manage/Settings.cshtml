@@ -1,0 +1,56 @@
+@model RestaurantSetting
+@{
+    ViewData["Title"] = "ตั้งค่าร้าน";
+}
+<h1>ข้อมูลร้านและประวัติการทำงาน</h1>
+<form class="panel narrow" method="post">
+    @Html.AntiForgeryToken()
+    <label>ชื่อร้าน<input name="name" value="@Model.Name" required/>
+    </label>
+    <label>โทรศัพท์<input name="phone" value="@Model.Phone"/>
+    </label>
+    <label>ที่อยู่<textarea name="address">@Model.Address</textarea>
+    </label>
+    <button class="button">บันทึกข้อมูลร้าน</button>
+</form>
+<form class="panel narrow" method="post" action="/Manage/TaxSettings">
+    @Html.AntiForgeryToken()
+    <h2>ข้อมูลสำหรับใบกำกับภาษี</h2>
+    <label>ชื่อผู้ประกอบการ<input name="taxLegalName" value="@Model.TaxLegalName" required maxlength="200" placeholder="ชื่อผู้ประกอบการตามทะเบียน"/>
+    </label>
+    <label>ที่อยู่สถานประกอบการ<textarea name="taxAddress" required maxlength="500" placeholder="ที่อยู่เต็มพร้อมรหัสไปรษณีย์">@Model.TaxAddress</textarea>
+    </label>
+    <label>เลขประจำตัวผู้เสียภาษี<input name="taxId" value="@Model.TaxId" required pattern="[0-9]{13}" inputmode="numeric" maxlength="13" placeholder="เลข 13 หลัก"/>
+    </label>
+    <p class="field-help">ตัวเลข 13 หลัก ไม่เว้นวรรคหรือใส่ขีด</p>
+    <label>รหัสสาขา<input name="taxBranch" value="@Model.TaxBranch" required pattern="[0-9]{5}" inputmode="numeric" maxlength="5" placeholder="00000"/>
+    </label>
+    <p class="field-help">สำนักงานใหญ่ใช้ 00000 หรือเลขสาขา 5 หลัก การแก้ไขมีผลกับใบกำกับภาษีที่ออกใหม่</p>
+    <button class="button">บันทึกข้อมูลผู้ประกอบการ</button>
+</form>
+<h2 class="mt" id="audit">ประวัติการทำงานล่าสุด</h2>
+<p class="muted">บันทึกผู้ดำเนินการ เวลา และรายละเอียด เพื่อการตรวจสอบย้อนหลัง</p>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>เวลา</th>
+                <th>ผู้ใช้ ID</th>
+                <th>การดำเนินการ</th>
+                <th>รายละเอียด</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (AuditLog auditEntry in ViewBag.Audit)
+            {
+                <tr>
+                    <td>@auditEntry.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    <td>@auditEntry.ActorId</td>
+                    <td>@auditEntry.Action</td>
+                    <td>@auditEntry.Detail</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pagination"/>

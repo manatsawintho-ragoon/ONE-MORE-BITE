@@ -1,0 +1,47 @@
+@model List<MenuItem>
+@{
+    ViewData["Title"] = "เมนูอาหาร";
+}
+<section class="catalog-page">
+    <div class="section-head">
+        <div>
+            <h1>วันนี้ทานอะไรดี</h1>
+            <p>เลือกจานที่ชอบ แล้วสั่งได้เลย</p>
+        </div>
+    </div>
+    <div class="catalog-layout">
+        <aside class="category-sidebar" aria-label="หมวดอาหาร">
+            <h2>หมวดอาหาร</h2>
+            <a class="@(ViewBag.Category == null ? "active" : "")" href="/Menu">เมนูทั้งหมด</a>
+            @foreach (Category category in ViewBag.Categories)
+            {
+                <a class="@(ViewBag.Category == category.Id ? "active" : "")" href="/Menu?category=@category.Id">@category.Name</a>
+            }
+        </aside>
+        <div class="catalog-content">
+            <form class="search menu-search" method="get" action="/Menu" role="search">
+                <label class="sr-only" for="menu-search">ค้นหาอาหาร</label>
+                <input id="menu-search" name="q" value="@ViewBag.Query" placeholder="ลองพิมพ์ชื่ออาหาร เช่น ข้าวผัด" autocomplete="off" aria-controls="search-suggestions" aria-expanded="false" data-menu-search/>
+                <button type="submit">ค้นหา</button>
+                <div id="search-suggestions" class="search-suggestions" hidden></div>
+            </form>
+            <p class="search-hint">พิมพ์ชื่ออาหารบางส่วนเพื่อดูเมนูใกล้เคียง</p>
+            <div class="result-meta">@Model.Count รายการ <span>ราคาก่อน VAT 7%</span>
+            </div>
+            <div class="food-grid">
+                @foreach (var item in Model)
+                {
+                    <partial name="_FoodCard" model="item"/>
+                }
+            </div>
+            @if (Model.Count == 0)
+            {
+                <div class="empty">
+                    <h2>ไม่พบเมนูนี้</h2>
+                    <p>ลองใช้คำสั้นลง หรือเลือกหมวดอาหาร</p>
+                    <a href="/Menu">ดูเมนูทั้งหมด</a>
+                </div>
+            }
+        </div>
+    </div>
+</section>

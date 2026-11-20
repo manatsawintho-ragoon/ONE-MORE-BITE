@@ -1,0 +1,243 @@
+@model RefundRequest
+@{
+    ViewData["Title"] = "คำขอคืนเงิน RF-" + Model.Id.ToString("D6");
+    string version = Convert.ToHexString(Model.RowVersion);
+    int actor = ViewBag.Actor;
+    bool manager = User.IsInRole("Manager") || User.IsInRole("Admin");
+    bool team = ViewBag.Team;
+    bool finance = ViewBag.Finance;
+    var names = (Dictionary<int, string>)ViewBag.Names;
+
+    string Name(int? id)
+    {
+        if (!id.HasValue)
+        {
+            return "ไม่ระบุ";
+        }
+
+        if (names.TryGetValue(id.Value, out string? name))
+        {
+            return name;
+        }
+
+        return "ผู้ใช้ #" + id;
+    }
+}
+<div class="section-head">
+    <div>
+        <h1>RF-@Model.Id.ToString("D6")</h1>
+        <p>ออเดอร์ #@Model.Payment.OrderId, <a class="underline-link" href="/Orders/Receipt/@Model.Payment.OrderId">ใบเสร็จเดิม</a>
+        </p>
+    </div>
+    <span class="badge">@RefundService.Label(Model.Status)</span>
+</div>
+<div class="checkout-grid">
+    <div>
+        <div class="panel">
+            <h2>รายละเอียดคืนเงิน</h2>
+            <div class="total-row">
+                <span>คืนเต็มยอด</span>
+                <strong>฿@Model.Amount.ToString("N2")</strong>
+            </div>
+            <p>ช่องทาง: @(Model.Method=="Cash"?"เงินสด":"โอนเงิน")</p>
+            @if (team || actor == Model.RequestedBy)
+            {
+                <p>เหตุผล: @Model.Reason</p>
+                <p>ผู้รับ: @Model.RecipientName</p>
+            }
+            @if (finance || actor == Model.RequestedBy)
+            {
+                <p>ปลายทาง: @Model.Destination</p>
+            }
+            @if (Model.Status == "Completed")
+            {
+                <p>คืนจริงเมื่อ @BusinessTime.Local(Model.RefundedAtUtc!.Value).ToString("dd/MM/yyyy HH:mm:ss")</p>
+                <p>เลขอ้างอิง: @Model.Reference</p>
+            }
+            else
+            {
+                <p class="field-help">สถานะนี้ยังไม่ใช่การยืนยันคืนเงินจริง ยอดรับชำระเดิมยังคงอยู่</p>
+            }
+            @if (finance && Model.EvidenceFileName != "")
+            {
+                <a class="button secondary" href="/Refunds/Evidence/@Model.Id" target="_blank" rel="noopener">ดูหลักฐานคืนเงิน</a>
+            }
+        </div>
+        <div class="panel">
+            <h2>ลำดับการดำเนินการ</h2>
+            <ol class="refund-timeline">
+                <li>ส่งคำขอ, @BusinessTime.Local(Model.RequestedAtUtc).ToString("dd/MM/yyyy HH:mm")
+                    @if (team)
+                    {
+                        <span>โดย @Name(Model.RequestedBy)</span>
+                    }
+                </li>
+                @if (Model.DecidedAtUtc.HasValue)
+                {
+                    <li>ตรวจคำขอ, @BusinessTime.Local(Model.DecidedAtUtc.Value).ToString("dd/MM/yyyy HH:mm")
+                        @if (team)
+                        {
+                            <span>โดย @Name(Model.DecidedBy)</span>
+                        }
+                    </li>
+                }
+                @if (Model.ClaimedAtUtc.HasValue)
+                {
+                    <li>รับงาน, @BusinessTime.Local(Model.ClaimedAtUtc.Value).ToString("dd/MM/yyyy HH:mm")
+                        @if (team)
+                        {
+                            <span>โดย @Name(Model.ClaimedBy)</span>
+                        }
+                    </li>
+                }
+                @if (Model.CompletedAtUtc.HasValue)
+                {
+                    <li>บันทึกคืนเงิน, @BusinessTime.Local(Model.CompletedAtUtc.Value).ToString("dd/MM/yyyy HH:mm")
+                        @if (team)
+                        {
+                            <span>โดย @Name(Model.CompletedBy)</span>
+                        }
+                    </li>
+                }
+            </ol>
+            @if (Model.DecisionReason != "")
+            {
+                <p>ผลพิจารณา: @Model.DecisionReason</p>
+            }
+        </div>
+        @if (finance)
+        {
+            <details class="panel">
+                <summary>ประวัติการเปลี่ยนสถานะ</summary>
+                @foreach (var log in (List<AuditLog>)ViewBag.Events)
+                {
+                    <p>
+                        <small>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm"), @log.Action, ผู้ใช้ #@log.ActorId</small>
+                        <br/>@log.Detail</p>
+                }
+            </details>
+        }
+    </div>
+    <div>
+        @if (Model.Status == "PendingApproval" && manager && actor != Model.RequestedBy)
+        {
+            <div class="panel">
+                <h2>พิจารณาคำขอ</h2>
+                <p>ตรวจยอด ผู้รับ และปลายทางก่อนอนุมัติ</p>
+                <form method="post" action="/Refunds/Approve">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <button class="button wide" data-confirm="อนุมัติคำขอนี้ให้นักบัญชีดำเนินการ?">อนุมัติคืนเงิน</button>
+                </form>
+                <form method="post" action="/Refunds/Reject">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <label>เหตุผลที่ไม่อนุมัติ<textarea name="reason" maxlength="500" required></textarea>
+                    </label>
+                    <button class="button secondary wide">ไม่อนุมัติ</button>
+                </form>
+            </div>
+        }
+        @if (Model.Status == "PendingApproval" && actor == Model.RequestedBy)
+        {
+            <div class="panel">
+                <p>ส่งคำขอแล้ว รอผู้จัดการตรวจสอบ หากต้องแก้ข้อมูลให้ถอนคำขอแล้วส่งใหม่ก่อนอนุมัติ</p>
+                <form method="post" action="/Refunds/Withdraw">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <button class="button secondary" data-confirm="ถอนคำขอนี้?">ถอนคำขอ</button>
+                </form>
+            </div>
+        }
+        @if (Model.Status == "Approved" && User.IsInRole("Accountant") && actor != Model.DecidedBy)
+        {
+            <div class="panel">
+                <h2>รับงานคืนเงิน</h2>
+                <p>รับงานก่อนจ่าย เพื่อให้มีนักบัญชีรับผิดชอบเพียงคนเดียว</p>
+                <form method="post" action="/Refunds/Claim">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <button class="button wide">รับงานคืนเงิน</button>
+                </form>
+            </div>
+        }
+        @if (Model.Status == "Paying" && User.IsInRole("Accountant") && actor == Model.ClaimedBy)
+        {
+            <div class="panel">
+                <h2>ยืนยันการคืนเงินจริง</h2>
+                <p>จ่ายตามผู้รับและช่องทางที่อนุมัติ ตรวจเลขอ้างอิงก่อนบันทึก หากเคยจ่ายแล้วห้ามจ่ายซ้ำ</p>
+                <form method="post" action="/Refunds/Complete" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <input type="hidden" name="completionKey" value="@Guid.NewGuid().ToString("N")"/>
+                    <label>เลขอ้างอิงการโอน / เลขเอกสารรับเงิน<input name="reference" maxlength="100" required/>
+                    </label>
+                    <label>วันเวลาคืนเงินจริง (กรุงเทพฯ)<input name="refundedAt" type="datetime-local" step="1" value="@BusinessTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")" required/>
+                    </label>
+                    <label>หลักฐาน JPG, PNG หรือ WebP ไม่เกิน 5 MB<input name="evidence" type="file" accept="image/jpeg,image/png,image/webp" required="@(Model.Method=="Transfer")"/>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" name="confirmed" value="true" required/>ตรวจสอบแล้วว่าได้คืนเงินจริงตามยอดนี้</label>
+                    <button class="button wide" data-confirm="บันทึกว่าคืนเงินจริงแล้ว? รายการที่บันทึกแล้วแก้ไขไม่ได้">บันทึกคืนเงินจริง</button>
+                </form>
+            </div>
+        }
+        @if (Model.Status == "Approved" && manager)
+        {
+            <details class="panel">
+                <summary>เพิกถอนก่อนเริ่มจ่าย</summary>
+                <form method="post" action="/Refunds/Revoke">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <label>เหตุผล<textarea name="reason" maxlength="500" required></textarea>
+                    </label>
+                    <button class="button secondary">เพิกถอนอนุมัติ</button>
+                </form>
+            </details>
+        }
+        @if (Model.Status == "Paying" && manager)
+        {
+            <details class="panel">
+                <summary>จัดการงานคืนเงินที่ค้าง</summary>
+                <p>ตรวจหลักฐานกับผู้รับงานเดิมก่อนทุกครั้ง ไม่ปล่อยงานอัตโนมัติเมื่อหมดเวลา</p>
+                <form method="post" action="/Refunds/Release">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <label>ผลการตรวจสอบ<textarea name="reason" maxlength="500" required></textarea>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" name="verifiedUnpaid" value="true" required/>ยืนยันจากหลักฐานว่ายังไม่ได้จ่ายเงิน</label>
+                    <button class="button secondary">ส่งกลับรอรับงาน</button>
+                </form>
+                <form method="post" action="/Refunds/ReassignPaying">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="version" value="@version"/>
+                    <label>ผู้รับมอบ<select name="assignee">
+                            @foreach (var user in (List<AppUser>)ViewBag.Accountants)
+                            {
+                                if (user.Id != Model.DecidedBy)
+                                {
+                                    <option value="@user.Id">@user.Name</option>
+                                }
+                            }
+                        </select>
+                    </label>
+                    <label>ผลตรวจสถานะจ่ายและผู้จ่ายจริง<textarea name="reason" maxlength="500" required></textarea>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" name="verified" value="true" required/>แจ้งสถานะและหลักฐานแก่ผู้รับมอบแล้ว ห้ามจ่ายซ้ำ</label>
+                    <button class="button secondary">มอบหมายผู้บันทึกต่อ</button>
+                </form>
+            </details>
+        }
+    </div>
+</div>
+<a class="back-link" href="/Refunds">กลับรายการคืนเงิน</a>

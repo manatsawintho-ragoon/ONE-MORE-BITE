@@ -1,0 +1,60 @@
+@model List<Reconciliation>
+@{
+    ViewData["Title"] = "กระทบยอดประจำวัน";
+}
+<div class="section-head">
+    <div>
+        <h1>กระทบยอดประจำวัน</h1>
+        <p>เทียบเงินรับสุทธิของวันกับยอดที่ตรวจนับ บันทึกครั้งใหม่โดยเก็บประวัติเดิม</p>
+    </div>
+</div>
+@if (User.IsInRole("Accountant"))
+{
+    <form class="panel finance-form" method="post" action="/Finance/Reconcile">
+        @Html.AntiForgeryToken()
+        <label>วันที่ธุรกรรม<input type="date" name="businessDate" value="@BusinessTime.Now.ToString("yyyy-MM-dd")" required/>
+        </label>
+        <label>ยอดเงินสดรับและจ่ายสุทธิของวัน<input type="number" name="countedCash" step="0.01" required/>
+        </label>
+        <label>ยอดโอนรับและจ่ายสุทธิตามรายการธนาคาร<input type="number" name="countedTransfer" step="0.01" required/>
+        </label>
+        <p class="field-help">หักเงินตั้งต้นออกก่อนเทียบยอด ใส่ค่าติดลบได้หากคืนเงินมากกว่ารับในวันนั้น</p>
+        <label>หมายเหตุ / เหตุผลส่วนต่าง<textarea name="note" maxlength="500"></textarea>
+        </label>
+        <button class="button">บันทึกกระทบยอด</button>
+    </form>
+}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>วันที่</th>
+                <th>เงินสด ระบบ / ตรวจนับ</th>
+                <th>โอน ระบบ / ตรวจสอบ</th>
+                <th>ส่วนต่างรวม</th>
+                <th>หมายเหตุ</th>
+                <th>บันทึกเมื่อ</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var reconciliation in Model)
+            {
+                <tr>
+                    <td>@reconciliation.BusinessDate.ToString("dd/MM/yyyy")</td>
+                    <td>@reconciliation.ExpectedCash.ToString("N2") / @reconciliation.CountedCash.ToString("N2")</td>
+                    <td>@reconciliation.ExpectedTransfer.ToString("N2") / @reconciliation.CountedTransfer.ToString("N2")</td>
+                    <td>@((reconciliation.CountedCash+reconciliation.CountedTransfer-reconciliation.ExpectedCash-reconciliation.ExpectedTransfer).ToString("N2"))</td>
+                    <td>@reconciliation.Note</td>
+                    <td>@BusinessTime.Local(reconciliation.RecordedAtUtc).ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="6">ยังไม่มีการบันทึกกระทบยอด</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pagination"/>

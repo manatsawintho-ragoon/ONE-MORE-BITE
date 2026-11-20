@@ -1,0 +1,152 @@
+@inject KruaImDee.Data.AppDb Db
+@{
+    var setting = Db.Settings.FirstOrDefault();
+    var team = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+    var workspace = Context.Request.Path.StartsWithSegments("/Staff")
+        || Context.Request.Path.StartsWithSegments("/Manage")
+        || Context.Request.Path.StartsWithSegments("/Finance")
+        || Context.Request.Path.StartsWithSegments("/Refunds");
+}
+<!DOCTYPE html>
+<html lang="th">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>@ViewData["Title"] - ร้านอาหาร เอาอีก</title>
+        <link rel="stylesheet" href="~/css/design.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/interactions.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/refinements.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/storefront.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/pos.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/finance.css" asp-append-version="true"/>
+        <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true"/>
+        <link rel="icon" type="image/png" href="/images/brand-mark.png"/>
+    </head>
+    <body class="@(workspace?"workspace":"") @(Context.Request.Path.StartsWithSegments("/Finance")||Context.Request.Path.StartsWithSegments("/Refunds")?"finance-workspace":"")">
+        <a class="skip" href="#main">ข้ามไปเนื้อหา</a>
+        <partial name="_Header"/>
+        @if (workspace)
+        {
+            <aside class="sidebar">
+                @if (team)
+                {
+                    <a href="/Staff">
+                        <partial name="_Icon" model='"grid"'/> ขายหน้าร้าน / POS</a>
+                    <a href="/Staff/Orders">
+                        <partial name="_Icon" model='"receipt"'/> ออเดอร์ทั้งหมด
+                        <span class="navigation-count" data-notification-count="orders" data-count-label="ออเดอร์รับแล้วที่รอเริ่มงาน" hidden></span>
+                    </a>
+                    <a href="/Staff/Kitchen">
+                        <partial name="_Icon" model='"clock"'/> คิวครัว
+                        <span class="navigation-count" data-notification-count="kitchen" data-count-label="ออเดอร์ในครัวที่ยังไม่จบงาน" hidden></span>
+                    </a>
+                    <a href="/Staff/Reservations">
+                        <partial name="_Icon" model='"calendar"'/> การจองโต๊ะ
+                        <span class="navigation-count" data-notification-count="reservations" data-count-label="การจองรอยืนยันที่ยังไม่พ้นเวลา" hidden></span>
+                    </a>
+                }
+                <a href="/Refunds">
+                    <partial name="_Icon" model='"refund"'/>รายการคืนเงิน
+                    <span class="navigation-count" data-notification-count="refunds" data-count-label="รายการคืนเงินที่ต้องติดตาม" hidden></span>
+                </a>
+                @if (User.IsInRole("Accountant") || User.IsInRole("Manager") || User.IsInRole("Admin"))
+                {
+                    <a href="/Finance">
+                        <partial name="_Icon" model='"chart"'/>การเงินรับและคืน</a>
+                    <a href="/Finance/Reconcile">
+                        <partial name="_Icon" model='"clipboard"'/>กระทบยอดประจำวัน</a>
+                }
+                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                {
+                    <hr/>
+                    <a href="/Manage/Menu">
+                        <partial name="_Icon" model='"food"'/>เมนูอาหาร</a>
+                    <a href="/Manage/Categories">
+                        <partial name="_Icon" model='"grid"'/>หมวดหมู่</a>
+                    <a href="/Manage/Tables">
+                        <partial name="_Icon" model='"table"'/>โต๊ะอาหาร</a>
+                    <a href="/Manage/Promotions">
+                        <partial name="_Icon" model='"tag"'/>โปรโมชั่น</a>
+                    <a href="/Manage/Reports">
+                        <partial name="_Icon" model='"chart"'/>รายงานยอดขาย</a>
+                }
+                @if (User.IsInRole("Admin"))
+                {
+                    <hr/>
+                    <a href="/Manage/Users">
+                        <partial name="_Icon" model='"user"'/>ผู้ใช้งาน</a>
+                    <a href="/Manage/Settings">
+                        <partial name="_Icon" model='"settings"'/>ตั้งค่าและประวัติ</a>
+                }
+                <div class="sidebar-bottom">เอาอีก   ONE MORE BITE<br/>
+                    <small>จัดการบริการหน้าร้าน</small>
+                </div>
+            </aside>
+        }
+        <main id="main" class="@(workspace?"work-main":"")">
+            @if (TempData["Success"] != null)
+            {
+                <div class="toast success" role="status"> @TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="toast error" role="alert">@TempData["Error"]</div>
+            }
+            @RenderBody()
+        </main>
+        @if (!workspace)
+        {
+            <footer class="restaurant-footer">
+                <div class="footer-columns">
+                    <div class="footer-brand-block">
+                        <a class="brand" href="/">
+                            <img class="brand-image" src="/images/brand-mark.png" alt=""/>
+                            <span>เอาอีก<small>ONE MORE BITE</small>
+                            </span>
+                        </a>
+                        <p>จานที่ชอบ สั่งได้เลย<br/>ทานที่ร้านหรือรับกลับบ้าน</p>
+                        <partial name="_SocialLinks"/>
+                    </div>
+                    <nav aria-label="เมนูส่วนท้าย">
+                        <h2>มื้อของคุณ</h2>
+                        <a href="/Menu">เมนูอาหาร</a>
+                        <a href="/Reservations">จองโต๊ะ</a>
+                        <a href="/Orders">ติดตามออเดอร์</a>
+                        <a href="/Account/Profile">บัญชีของฉัน</a>
+                    </nav>
+                    <div class="footer-contact">
+                        <h2>แวะมาหาเรา</h2>
+                        <p>
+                            <partial name="_Icon" model='"clock"'/>
+                            <span>ทุกวัน 10:00 ถึง 22:00 น.</span>
+                        </p>
+                        <p>
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 3h4l2 5-3 2c2 3 3 4 6 6l2-3 5 2v4c0 2-2 2-3 2C9 20 4 15 3 6c0-1 0-3 2-3Z"/>
+                            </svg>
+                            <span>@setting?.Phone</span>
+                        </p>
+                        <p>
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 22s8-8 8-14a8 8 0 0 0-16 0c0 6 8 14 8 14Z"/>
+                                <circle cx="12" cy="8" r="3"/>
+                            </svg>
+                            <span>@setting?.Address</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <small>@DateTime.Now.Year เอาอีก ONE MORE BITE</small>
+                    <a href="/Account/StaffLogin">เข้าสู่ระบบพนักงาน</a>
+                </div>
+            </footer>
+        }
+        <partial name="_Interactions"/>
+        <div id="cart-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+        <script src="~/js/forms.js" asp-append-version="true"></script>
+        <script src="~/js/storefront.js" asp-append-version="true"></script>
+        <script src="~/js/app.js" asp-append-version="true"></script>
+        <script src="~/js/notifications.js" asp-append-version="true"></script>
+        @await RenderSectionAsync("Scripts", required: false)
+    </body>
+</html>

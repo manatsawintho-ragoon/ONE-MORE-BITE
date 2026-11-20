@@ -1,0 +1,30 @@
+@model TaxInvoiceInput
+@{
+    ViewData["Title"] = "ข้อมูลใบกำกับภาษี";
+}
+<section class="section narrow">
+    <h1>ข้อมูลใบกำกับภาษี</h1>
+    <p class="muted">ออเดอร์ #@Model.OrderId.ToString("D4") กรุณาตรวจข้อมูลผู้ซื้อให้ถูกต้องก่อนออกเอกสาร</p>
+    <form class="panel" method="post" action="/Invoices/Issue">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="OrderId" value="@Model.OrderId"/>
+        <label>ชื่อผู้ซื้อหรือชื่อบริษัท
+            <input name="BuyerName" required maxlength="200" placeholder="ชื่อและนามสกุล หรือชื่อบริษัทเต็ม" autocomplete="organization"/>
+        </label>
+        <p class="field-help">ใช้ชื่อตามข้อมูลผู้เสียภาษี</p>
+        <label>เลขประจำตัวผู้เสียภาษี
+            <input name="BuyerTaxId" required inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" placeholder="เลข 13 หลัก ไม่เว้นวรรค"/>
+        </label>
+        <p class="field-help">กรอกตัวเลข 13 หลัก โดยไม่ใส่ขีด</p>
+        <label>ที่อยู่ผู้ซื้อ
+            <textarea name="BuyerAddress" required maxlength="500" rows="3" placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด และรหัสไปรษณีย์"></textarea>
+        </label>
+        <label>รหัสสาขา
+            <input name="BuyerBranch" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="00000 สำหรับสำนักงานใหญ่"/>
+        </label>
+        <p class="field-help">บุคคลธรรมดาเว้นว่างได้ บริษัทใช้ 00000 สำหรับสำนักงานใหญ่ หรือเลขสาขา 5 หลัก</p>
+        <p class="field-help">เมื่อออกเอกสารแล้ว ระบบจะเก็บข้อมูลชุดนี้ไว้กับเลขที่ใบกำกับภาษี</p>
+        <button class="button wide" data-confirm="ยืนยันชื่อ ที่อยู่ และเลขผู้เสียภาษีถูกต้องแล้ว?">ออกใบกำกับภาษี</button>
+    </form>
+    <a class="back-link" href="/Orders/Receipt/@Model.OrderId">กลับใบเสร็จ</a>
+</section>

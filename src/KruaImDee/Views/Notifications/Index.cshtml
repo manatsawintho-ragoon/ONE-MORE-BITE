@@ -1,0 +1,55 @@
+@model List<AppNotification>
+@{
+    ViewData["Title"] = "การแจ้งเตือน";
+}
+<section class="notifications-page">
+    <div class="section-head">
+        <div>
+            <h1>การแจ้งเตือน</h1>
+            <p>ติดตามความคืบหน้าและเปิดรายการที่เกี่ยวข้อง</p>
+        </div>
+        <button type="button" class="button" data-notification-read-all>อ่านทั้งหมด</button>
+    </div>
+    <p class="notification-page-error" data-notification-page-error hidden>บันทึกการอ่านไม่สำเร็จ กรุณาลองอีกครั้ง</p>
+    <div class="notification-history">
+        @foreach (var notification in Model)
+        {
+            var itemClass = "notification-item";
+            if (notification.ReadAtUtc == null)
+            {
+                itemClass += " is-unread";
+            }
+            var icon = "bell";
+            switch (notification.Kind)
+            {
+                case "Order":
+                    icon = "receipt";
+                    break;
+                case "Reservation":
+                    icon = "calendar";
+                    break;
+                case "Refund":
+                    icon = "refund";
+                    break;
+            }
+            <a class="@itemClass" href="@notification.Url" data-notification-id="@notification.Id">
+                <partial name="_Icon" model="icon"/>
+                <span class="notification-content">
+                    <strong>@notification.Title</strong>
+                    <span>@notification.Message</span>
+                    <time datetime="@notification.CreatedAtUtc.ToString("o")">@BusinessTime.Local(notification.CreatedAtUtc).ToString("dd/MM/yyyy HH:mm")</time>
+                    <span class="notification-action">ดูรายละเอียด</span>
+                    @if (notification.ReadAtUtc == null)
+                    {
+                        <span class="notification-read-state">ยังไม่อ่าน</span>
+                    }
+                </span>
+            </a>
+        }
+        @if (Model.Count == 0)
+        {
+            <p class="notification-empty">ยังไม่มีการแจ้งเตือน</p>
+        }
+    </div>
+    <partial name="_Pagination"/>
+</section>

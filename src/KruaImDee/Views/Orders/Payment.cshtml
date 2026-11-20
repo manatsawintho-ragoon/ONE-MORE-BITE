@@ -1,0 +1,53 @@
+@model Order
+@{
+    ViewData["Title"] = "ชำระเงิน";
+    var expired = !Model.PaymentExpiresAt.HasValue || Model.PaymentExpiresAt.Value <= DateTime.UtcNow;
+    var deadline = Model.PaymentExpiresAt?.ToString("yyyy-MM-ddTHH:mm:ss") + "Z";
+}
+<section class="section payment-page">
+    <a class="back-link" href="/Orders/Details/@Model.Id">กลับไปออเดอร์</a>
+    <div class="section-head">
+        <div>
+            <h1>ชำระเงิน</h1>
+            <p>ออเดอร์ #@Model.Id.ToString("D4")</p>
+        </div>
+        <img class="payment-brand" src="/images/brand-mark.png" alt="เอาอีก"/>
+    </div>
+    <div class="payment-grid" data-payment-deadline="@deadline">
+        <div class="panel payment-qr-panel">
+            <h2>ยอดชำระ</h2>
+            <strong class="payment-amount">฿@Model.Total.ToString("N2")</strong>
+            <p>รวม VAT @Model.VatRate.ToString("0.##")% แล้ว</p>
+            <img class="payment-qr" src="/images/payment-qr.jpg" alt="คิวอาร์โค้ดสำหรับชำระเงิน"/>
+            <p class="payment-time">เวลาที่เหลือ <time role="timer" aria-live="off" data-payment-countdown>กำลังตรวจสอบ</time>
+            </p>
+            <p class="field-help">เวลาชำระ 30 นาที การรีเฟรชหน้าไม่เริ่มเวลาใหม่</p>
+        </div>
+        <form class="panel payment-form" method="post" action="/Orders/ConfirmPayment" enctype="multipart/form-data" data-payment-form>
+            @Html.AntiForgeryToken()
+            <h2>แนบหลักฐานการชำระ</h2>
+            <input type="hidden" name="orderId" value="@Model.Id"/>
+            <p>เลือกภาพสลิป แล้วกดยืนยันชำระเงิน</p>
+            <label>รูปสลิป
+                <input type="file" name="slip" accept="image/jpeg,image/png,image/webp" required data-slip-input disabled="@expired"/>
+            </label>
+            <div class="slip-preview" hidden>
+                <img alt="ภาพสลิปที่เลือก" data-slip-preview/>
+            </div>
+            <div class="line-item">
+                <span>ค่าอาหารหลังส่วนลด</span>
+                <strong>฿@((Model.Subtotal-Model.Discount).ToString("N2"))</strong>
+            </div>
+            <div class="line-item">
+                <span>VAT @Model.VatRate.ToString("0.##")%</span>
+                <strong>฿@Model.VatAmount.ToString("N2")</strong>
+            </div>
+            <div class="total-row">
+                <span>ยอดชำระ</span>
+                <strong>฿@Model.Total.ToString("N2")</strong>
+            </div>
+            <p data-payment-status role="status" aria-live="polite" class="@(expired?"field-error":"field-help")">@(expired?"หมดเวลาชำระแล้ว กรุณาติดต่อพนักงานที่หน้าร้าน":"แนบสลิปและตรวจสอบยอดก่อนยืนยัน")</p>
+            <button class="button wide" data-payment-submit disabled="@expired">ยืนยันชำระเงิน</button>
+        </form>
+    </div>
+</section>

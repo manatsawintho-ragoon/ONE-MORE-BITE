@@ -1,0 +1,41 @@
+@model List<DiningTable>
+@{
+    ViewData["Title"] = "โต๊ะอาหาร";
+    var editedItem = (DiningTable)ViewBag.Edit;
+}
+<h1>โต๊ะอาหาร</h1>
+<div class="manage-grid">
+    <div class="tables-grid">
+        @foreach (var table in Model)
+        {
+            <article class="table-card">
+                <img class="table-qr" src="/Manage/TableQr/@table.Id" alt="QR สั่งอาหารโต๊ะ @table.Name"/>
+                <h2>@table.Name</h2>
+                <p>@table.Capacity ที่นั่ง, @(table.Active?"เปิดใช้งาน":"ปิดใช้งาน")</p>
+                <a href="?id=@table.Id" class="red">แก้ไข </a>
+                <a href="/Menu?table=@table.Id" class="back-link">ลิงก์สั่งอาหารประจำโต๊ะ </a>
+                <button class="text-button" onclick="navigator.clipboard.writeText(location.origin+'/Menu?table=@table.Id');this.textContent='คัดลอกแล้ว '">คัดลอกลิงก์สำหรับ QR</button>
+                <form method="post" action="/Manage/Deactivate">
+                    @Html.AntiForgeryToken()
+                    <input name="kind" value="Tables" type="hidden"/>
+                    <input name="id" value="@table.Id" type="hidden"/>
+                    <button class="text-button">ปิดใช้งาน</button>
+                </form>
+            </article>
+        }
+    </div>
+    <form class="panel" method="post" action="/Manage/SaveTable">
+        @Html.AntiForgeryToken()
+        <h2>@(editedItem.Id==0?"เพิ่มโต๊ะ":"แก้ไขโต๊ะ")</h2>
+        <input name="id" value="@editedItem.Id" type="hidden"/>
+        <label>ชื่อโต๊ะ<input name="name" value="@editedItem.Name" required maxlength="30"/>
+        </label>
+        <label>จำนวนที่นั่ง<input name="capacity" value="@editedItem.Capacity" type="number" min="1" max="20" required/>
+        </label>
+        <label class="check">
+            <input name="active" type="checkbox" value="true" checked="@editedItem.Active"/> เปิดใช้งาน</label>
+        <button class="button">บันทึก</button>
+        <a class="back-link" href="/Manage/Tables">เพิ่มรายการใหม่</a>
+    </form>
+</div>
+<partial name="_Pagination"/>

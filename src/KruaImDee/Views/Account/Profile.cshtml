@@ -1,0 +1,18 @@
+@model AppUser
+@{
+    ViewData["Title"] = "ข้อมูลของฉัน";
+}
+<section class="section narrow">
+    <h1>ข้อมูลของฉัน</h1>
+    <form class="panel" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All"></div>
+        <label>ชื่อ<input name="name" value="@(ViewBag.Name??Model.Name)" required maxlength="100"/>
+        </label>
+        <label>เบอร์โทร<input name="phone" type="tel" value="@(ViewBag.Phone??Model.Phone)" required pattern="[0-9]{9,10}"/>
+        </label>
+        <label>อีเมล<input value="@Model.Email" disabled/>
+        </label>
+        <button class="button">บันทึกข้อมูล</button>
+    </form>
+</section>

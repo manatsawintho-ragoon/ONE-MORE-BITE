@@ -1,0 +1,151 @@
+@model CartPage
+@{
+    ViewData["Title"] = "ตะกร้าของคุณ";
+    var selectedTable = Model.Tables.FirstOrDefault(x => x.Id == (ViewBag.TableId as int?));
+    var itemCount = Model.Lines.Sum(x => x.Line.Quantity);
+}
+<section class="section cart-page">
+    <div class="section-head">
+        <div>
+            <h1>ตะกร้าของคุณ</h1>
+            <p>@itemCount รายการในมื้อนี้</p>
+        </div>
+        <a href="/Menu" class="underline-link">เลือกอาหารเพิ่ม</a>
+    </div>
+    @if (Model.Lines.Count == 0)
+    {
+        <div class="empty">
+            <h2>ตะกร้ายังว่าง</h2>
+            <p>เลือกเมนูเพื่อเริ่มสั่งอาหาร</p>
+            <a class="button" href="/Menu">ดูเมนูอาหาร</a>
+        </div>
+    }
+    else
+    {
+        <div class="checkout-grid compact-checkout">
+            <div class="cart-lines" id="cart-items">
+                @foreach (var entry in Model.Lines)
+                {
+                    <article class="cart-line">
+                        <img src="@entry.Item.ImageUrl" alt="@entry.Item.Name"/>
+                        <div>
+                            <h3>@entry.Item.Name</h3>
+                            @if (!string.IsNullOrWhiteSpace(entry.Line.Note))
+                            {
+                                <p>@entry.Line.Note</p>
+                            }
+                            <span>จานละ ฿@entry.Item.EffectivePrice.ToString("N2")</span>
+                            @if (entry.Item.DiscountPercent > 0)
+                            {
+                                <small class="discount-label">
+                                    <del>฿@entry.Item.Price.ToString("N2")</del> ลด @entry.Item.DiscountPercent.ToString("0.##")%</small>
+                            }
+                            <form class="inline-form quantity-edit" method="post" action="/Cart/Update">
+                                @Html.AntiForgeryToken()
+                                <input name="index" type="hidden" value="@Model.Lines.IndexOf(entry)"/>
+                                <input name="quantity" type="number" min="1" max="99" value="@entry.Line.Quantity" required aria-label="จำนวน @entry.Item.Name"/>
+                                <button class="text-button">ปรับจำนวน</button>
+                            </form>
+                        </div>
+                        <div class="cart-line-end">
+                            <strong>฿@((entry.Item.EffectivePrice * entry.Line.Quantity).ToString("N2"))</strong>
+                            <form method="post" action="/Cart/Remove">
+                                @Html.AntiForgeryToken()
+                                <input name="index" type="hidden" value="@Model.Lines.IndexOf(entry)"/>
+                                <button class="text-button" aria-label="ลบ @entry.Item.Name">ลบรายการ</button>
+                            </form>
+                        </div>
+                    </article>
+                }
+            </div>
+            <form id="checkout-form" class="panel order-summary compact-summary" method="post" action="/Cart/Checkout" data-checkout>
+                @Html.AntiForgeryToken()
+                <div class="summary-heading">
+                    <h2>สรุปมื้อนี้</h2>
+                    <span>@itemCount รายการ</span>
+                </div>
+                <div class="summary-foods">
+                    @foreach (var entry in Model.Lines.Take(3))
+                    {
+                        <img src="@entry.Item.ImageUrl" alt="@entry.Item.Name" title="@entry.Item.Name"/>
+                    }
+                    <span>@string.Join(", ", Model.Lines.Take(2).Select(x => x.Item.Name))@(Model.Lines.Count > 2 ? " และเมนูอื่น" : "")</span>
+                </div>
+                <div class="service-segment" aria-label="การรับอาหาร">
+                    <button type="button" data-service="takeaway" aria-pressed="@(selectedTable == null ? "true" : "false")">รับกลับบ้าน</button>
+                    <button type="button" data-service="dinein" aria-pressed="@(selectedTable != null ? "true" : "false")">ทานที่ร้าน</button>
+                </div>
+                <details class="cart-option table-option" data-table-option>
+                    <summary>
+                        <span data-service-label>@(selectedTable?.Name ?? "รับกลับบ้าน")</span>
+                        <small>เลือก / เปลี่ยนโต๊ะ</small>
+                    </summary>
+                    <partial name="_TablePicker" model="Model.Tables"/>
+                </details>
+                <details class="cart-option">
+                    <summary>ใช้รหัสส่วนลด <span>+</span>
+                    </summary>
+                    <div class="option-body">
+                        <label>รหัสโปรโมชั่น<input name="promo" placeholder="กรอกรหัสส่วนลด ถ้ามี" maxlength="30" data-promo/>
+                        </label>
+                        <button class="button secondary" type="button" data-apply-promo>ตรวจสอบส่วนลด</button>
+                    </div>
+                </details>
+                <details class="cart-option">
+                    <summary>หมายเหตุถึงร้าน <span>+</span>
+                    </summary>
+                    <div class="option-body">
+                        <label>หมายเหตุ<textarea name="note" maxlength="300" placeholder="เช่น ขอช้อนส้อมเพิ่ม"></textarea>
+                        </label>
+                    </div>
+                </details>
+                <div class="quote-breakdown">
+                    <div class="line-item">
+                        <span>ค่าอาหาร</span>
+                        <span data-quote-subtotal>฿@Model.Total.ToString("N2")</span>
+                    </div>
+                    <div class="line-item">
+                        <span>ส่วนลดรหัสโปรโมชั่น</span>
+                        <span data-quote-discount>฿0.00</span>
+                    </div>
+                    <div class="line-item">
+                        <span>VAT 7%</span>
+                        <span data-quote-vat>฿@Model.VatAmount.ToString("N2")</span>
+                    </div>
+                    <div class="total-row">
+                        <strong>ยอดรวม</strong>
+                        <strong data-quote-total>฿@Model.GrandTotal.ToString("N2")</strong>
+                    </div>
+                </div>
+                <p data-quote-status role="status" aria-live="polite" class="field-help">รวม VAT แล้ว พร้อมยืนยัน</p>
+                <button class="button wide" data-confirm-order>ยืนยันสั่งอาหาร</button>
+                <p class="summary-footnote">เลือกวิธีชำระเงินได้หลังยืนยัน</p>
+            </form>
+        </div>
+        <div class="mobile-cart-bar">
+            <button type="button" data-open-items>ดู @itemCount รายการ</button>
+            <strong data-mobile-cart-total>฿@Model.GrandTotal.ToString("N2")</strong>
+            <a class="button" href="#checkout-form">สรุปยอด</a>
+        </div>
+        <dialog class="cart-items-drawer" id="cart-items-drawer" aria-labelledby="cart-drawer-title">
+            <div class="drawer-head">
+                <h2 id="cart-drawer-title">อาหารในตะกร้า</h2>
+                <button type="button" class="icon-button" data-close-items aria-label="ปิดรายการ">
+                    <partial name="_Icon" model='"close"'/>
+                </button>
+            </div>
+            @foreach (var entry in Model.Lines)
+            {
+                <div class="drawer-food">
+                    <img src="@entry.Item.ImageUrl" alt=""/>
+                    <div>
+                        <strong>@entry.Item.Name</strong>
+                        <small>@entry.Line.Quantity รายการ</small>
+                    </div>
+                    <span>฿@((entry.Item.EffectivePrice * entry.Line.Quantity).ToString("N2"))</span>
+                </div>
+            }
+            <button type="button" class="button wide" data-edit-items>กลับไปแก้ไขรายการ</button>
+        </dialog>
+    }
+</section>

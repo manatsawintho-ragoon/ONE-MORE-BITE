@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "เข้าสู่ระบบพนักงาน";
+}
+<section class="auth-wrap staff-auth">
+    <div class="auth-art">
+        <h1>จัดการร้าน<br/>และออเดอร์</h1>
+        <img src="/images/food-11.jpg" alt="อาหารจากครัวเอาอีก"/>
+    </div>
+    <form class="auth-form" method="post" action="/Account/StaffLogin">
+        @Html.AntiForgeryToken()
+        <h1>เข้าสู่ระบบพนักงาน</h1>
+        <p>เข้าสู่ระบบสำหรับพนักงาน ผู้จัดการ และผู้ดูแลร้าน</p>
+        <div asp-validation-summary="All" class="validation"></div>
+        <input name="returnUrl" type="hidden" value="@ViewBag.ReturnUrl"/>
+        <label>อีเมลพนักงาน<input name="email" value="@ViewBag.Email" type="email" required autocomplete="username" placeholder="กรอกอีเมล"/>
+        </label>
+        <label>รหัสผ่าน<input name="password" type="password" required autocomplete="current-password"/>
+        </label>
+        <button class="button wide">เข้าสู่พื้นที่ทำงาน </button>
+        <a class="back-link" href="/Account/Login">สำหรับลูกค้า, เข้าสู่ระบบที่นี่</a>
+    </form>
+</section>

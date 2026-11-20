@@ -1,0 +1,101 @@
+@model ReportPage
+@inject KruaImDee.Data.AppDb Db
+@{
+    ViewData["Title"] = "รายงานยอดขาย";
+    var total = Model.TotalAmount;
+}
+<header class="report-letterhead">
+    <img src="/images/brand-mark.png" alt="เอาอีก"/>
+    <div>
+        <strong>@(Db.Settings.FirstOrDefault()?.Name)</strong>
+        <p>รายงานยอดขายระหว่าง @Model.From.ToString("dd/MM/yyyy") ถึง @Model.To.ToString("dd/MM/yyyy")</p>
+    </div>
+</header>
+<div class="section-head">
+    <div>
+        <h1>รายงานยอดขาย</h1>
+        <p>ยอดขายตามวันรับชำระ ตัดบิลที่คืนเงินแล้วออก</p>
+        <a class="underline-link" href="/Finance">ดูเงินรับและเงินคืนตามวันที่เกิดรายการจริง</a>
+    </div>
+    <button class="button secondary no-print" onclick="window.print()">พิมพ์รายงาน</button>
+</div>
+<form class="filter-bar" method="get">
+    <label>ตั้งแต่<input name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")"/>
+    </label>
+    <label>ถึง<input name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")"/>
+    </label>
+    <button class="button">ดูรายงาน</button>
+</form>
+<div class="stats">
+    <div>
+        <small>ยอดขายสุทธิ</small>
+        <strong>฿@total.ToString("N2")</strong>
+    </div>
+    <div>
+        <small>ออเดอร์ที่ชำระแล้ว</small>
+        <strong>@Model.PaymentCount</strong>
+    </div>
+    <div>
+        <small>ยอดเฉลี่ยต่อบิล</small>
+        <strong>฿@(Model.PaymentCount==0?"0":(total/Model.PaymentCount).ToString("N2"))</strong>
+    </div>
+</div>
+<div class="report-grid">
+    <div class="panel">
+        <h2>เมนูขายดี</h2>
+        @if (Model.BestSellers.Count == 0)
+        {
+            <p class="muted">ยังไม่มียอดขายในช่วงเวลานี้</p>
+        }
+        @foreach (var item in Model.BestSellers)
+        {
+            <div class="sales-row">
+                <div>
+                    <strong>@item.Name</strong>
+                    <span>@item.Quantity จาน, ฿@item.Total.ToString("N2") หลังส่วนลดเมนู ก่อนส่วนลดคูปองและ VAT</span>
+                </div>
+                <div class="bar">
+                    <i style="width:@(100m*item.Quantity/Model.BestSellers.Max(x=>x.Quantity))%">
+                    </i>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="panel">
+        <h2>ช่องทางการชำระ</h2>
+        @foreach (var method in new[]{"Cash","Transfer"})
+        {
+            <div class="total-row">
+                <span>@(method=="Cash"?"เงินสด":"โอนเงิน")</span>
+                <strong>฿@((method=="Cash"?Model.CashAmount:Model.TransferAmount).ToString("N2"))</strong>
+            </div>
+        }
+    </div>
+</div>
+<h2 class="mt">รายการรับชำระ</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ใบเสร็จ</th>
+                <th>วันที่</th>
+                <th>ช่องทาง</th>
+                <th>ยอดสุทธิ</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in Model.Payments)
+            {
+                <tr>
+                    <td>
+                        <a href="/Orders/Receipt/@payment.OrderId">R-@payment.OrderId.ToString("D6")</a>
+                    </td>
+                    <td>@payment.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@(payment.Method=="Cash"?"เงินสด":"โอนเงิน")</td>
+                    <td>฿@payment.Amount.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pagination"/>

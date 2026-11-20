@@ -1,0 +1,37 @@
+@model Payment
+@{
+    ViewData["Title"] = "ขอคืนเงิน";
+}
+<div class="section-head">
+    <div>
+        <h1>ขอคืนเงิน</h1>
+        <p>ออเดอร์ #@Model.OrderId, คืนเต็มยอดที่รับชำระ</p>
+    </div>
+</div>
+<div class="panel finance-form">
+    <div class="total-row">
+        <span>จำนวนเงินที่จะขอคืน</span>
+        <strong>฿@Model.Amount.ToString("N2")</strong>
+    </div>
+    <p>กรอกข้อมูลรับเงินคืนแล้วส่งให้ผู้จัดการตรวจสอบ นักบัญชีจะดำเนินการหลังอนุมัติ</p>
+    <p class="field-help">การส่งคำขอยังไม่ยกเลิกออเดอร์หรือหยุดการปรุงอาหาร หากต้องการหยุดรายการ กรุณาติดต่อร้าน</p>
+    <form method="post" action="/Refunds/Request">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="orderId" value="@Model.OrderId"/>
+        <input type="hidden" name="requestKey" value="@Guid.NewGuid().ToString("N")"/>
+        <label>เหตุผลขอคืนเงิน<textarea name="reason" maxlength="500" required></textarea>
+        </label>
+        <label>วิธีคืนเงิน<select name="method">
+                <option value="Cash">รับเงินสดที่ร้าน</option>
+                <option value="Transfer">โอนเงิน</option>
+            </select>
+        </label>
+        <label>ชื่อผู้รับเงิน<input name="recipientName" maxlength="100" required/>
+        </label>
+        <label>จุดรับเงินสด หรือธนาคารและบัญชีรับเงิน<input name="destination" maxlength="300" required/>
+        </label>
+        <p class="field-help">เลือกเงินสดให้ระบุว่ารับที่ร้าน เลือกโอนให้ระบุธนาคารและเลขบัญชีให้ครบ หากต้องแก้ข้อมูลสามารถถอนคำขอก่อนอนุมัติแล้วส่งใหม่ได้</p>
+        <button class="button" data-confirm="ตรวจยอดและข้อมูลรับเงินแล้ว ส่งคำขอให้ผู้จัดการตรวจสอบ?">ส่งคำขอคืนเงิน</button>
+        <a class="button secondary" href="/Orders/Details/@Model.OrderId">กลับออเดอร์</a>
+    </form>
+</div>

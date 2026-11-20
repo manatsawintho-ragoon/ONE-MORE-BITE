@@ -1,0 +1,13 @@
+@model List<Order>
+@{
+    ViewData["Title"] = "ออเดอร์ทั้งหมด";
+}
+<div class="section-head">
+    <div>
+        <h1>ออเดอร์ทั้งหมด</h1>
+        <p>ดูสถานะครัว รับชำระ และเปิดใบเสร็จ</p>
+    </div>
+    <a class="button" href="/Staff">เปิดออเดอร์</a>
+</div>
+<partial name="_OrderList" model="Model"/>
+<partial name="_Pagination"/>

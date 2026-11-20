@@ -1,0 +1,51 @@
+@model MenuItem
+<article class="food-card">
+    <a class="food-photo" href="/Menu/Details/@Model.Id">
+        <img src="@Model.ImageUrl" alt="@Model.Name" loading="lazy"/>
+        @if (Model.SoldOut)
+        {
+            <span class="photo-badge">หมดชั่วคราว</span>
+        }
+        else if (Model.DiscountPercent > 0)
+        {
+            <span class="photo-badge discount-badge">ลด @Model.DiscountPercent.ToString("0.##")%</span>
+        }
+    </a>
+    <div class="food-meta">
+        <span class="eyebrow">@(Model.Category?.Name ?? "เมนูอาหาร")</span>
+        <h3>
+            <a href="/Menu/Details/@Model.Id">@Model.Name</a>
+        </h3>
+        <p>@Model.Description</p>
+        @if (Model.ReviewCount > 0)
+        {
+            <a class="rating-line" href="/Menu/Details/@Model.Id#reviews">
+                <partial name="_Star"/> @Model.AverageRating.ToString("0.0")
+                <small>(@Model.ReviewCount รีวิว)</small>
+            </a>
+        }
+        else
+        {
+            <a class="rating-line rating-empty" href="/Menu/Details/@Model.Id#reviews">
+                <partial name="_Star"/>
+                <small>ยังไม่มีรีวิว</small>
+            </a>
+        }
+        <div class="food-bottom">
+            <div class="menu-price">
+                <strong>฿@Model.EffectivePrice.ToString("N2")</strong>
+                @if (Model.DiscountPercent > 0)
+                {
+                    <del>฿@Model.Price.ToString("N2")</del>
+                    <small>ประหยัด ฿@((Model.Price - Model.EffectivePrice).ToString("N2"))</small>
+                }
+            </div>
+            <form method="post" action="/Cart/Add">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="menuItemId" value="@Model.Id"/>
+                <input type="hidden" name="quantity" value="1"/>
+                <button class="add-button" disabled="@Model.SoldOut" aria-label="เพิ่ม @Model.Name">เพิ่ม</button>
+            </form>
+        </div>
+    </div>
+</article>

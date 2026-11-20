@@ -1,0 +1,36 @@
+@{
+    var pagination = ViewBag.Pagination as Pagination;
+    string PageUrl(int page)
+    {
+        var query = Context.Request.Query.ToDictionary(x => x.Key, x => (string?)x.Value.ToString());
+        query["page"] = page.ToString();
+        return Context.Request.Path + Microsoft.AspNetCore.Http.QueryString.Create(query);
+    }
+}
+@if (pagination != null && pagination.TotalCount > 0)
+{
+    <nav class="pagination" aria-label="แบ่งหน้ารายการ">
+        <span>@pagination.TotalCount รายการ, หน้า @pagination.Page จาก @pagination.TotalPages</span>
+        <div class="page-links">
+            @if (pagination.HasPrevious)
+            {
+                <a href="@PageUrl(pagination.Page - 1)" aria-label="หน้าก่อน">ก่อนหน้า</a>
+            }
+            @for (var pageNumber = Math.Max(1, pagination.Page - 2); pageNumber <= Math.Min(pagination.TotalPages, pagination.Page + 2); pageNumber++)
+            {
+                if (pageNumber == pagination.Page)
+                {
+                    <span aria-current="page">@pageNumber</span>
+                }
+                else
+                {
+                    <a href="@PageUrl(pageNumber)">@pageNumber</a>
+                }
+            }
+            @if (pagination.HasNext)
+            {
+                <a href="@PageUrl(pagination.Page + 1)" aria-label="หน้าถัดไป">ถัดไป</a>
+            }
+        </div>
+    </nav>
+}

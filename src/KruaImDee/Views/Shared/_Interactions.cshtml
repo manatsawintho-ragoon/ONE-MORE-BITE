@@ -1,0 +1,21 @@
+<dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+    <div class="dialog-heading">
+        <partial name="_Icon" model='"alert"'/>
+        <h2 id="confirm-title">ยืนยันการทำรายการ</h2>
+    </div>
+    <p id="confirm-message"></p>
+    <div class="dialog-actions">
+        <button type="button" class="button secondary" data-cancel-confirm autofocus>กลับไปตรวจสอบ</button>
+        <button type="button" class="button" data-accept-confirm>ยืนยัน</button>
+    </div>
+</dialog>
+<div class="live-toast" id="cart-feedback" role="status" aria-live="polite" aria-atomic="true" hidden>
+    <span class="feedback-icon">
+        <partial name="_Icon" model='"check"'/>
+    </span>
+    <span data-feedback-message></span>
+    <a href="/Cart">ดูตะกร้า</a>
+    <button class="icon-button" type="button" data-dismiss-feedback aria-label="ปิดข้อความ">
+        <partial name="_Icon" model='"close"'/>
+    </button>
+</div>
